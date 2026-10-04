@@ -7,36 +7,95 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="top">
-    <div class="wrap">
-      <h1 class="title">我們家的食譜</h1>
-      <p class="lede">挑一道想吃的菜，吃完記得幫它打分數！</p>
-      <section class="who" aria-labelledby="who-h">
-        <h2 id="who-h" class="who-h">現在是誰在看？</h2>
+  <nav class="nav">
+    <div class="wrap nav-in">
+      <a class="brand" href="./">我們家的食譜</a>
+      <div class="who" role="group" aria-label="現在是誰在看">
+        <span class="who-label">我是</span>
         <div class="who-list" id="who-list"></div>
-      </section>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <h1 class="hero-title">今晚想吃什麼？</h1>
+      <p class="hero-lede">家裡每一道拿手菜都在這裡。挑一道一起做，吃完幫它打分數。</p>
     </div>
   </header>
 
+  <section class="wishes" aria-labelledby="wish-h">
+    <div class="wrap">
+      <div class="wish-top">
+        <div>
+          <h2 class="wish-h" id="wish-h">許願池</h2>
+          <p class="wish-lede">今天或哪一天想吃什麼，許個願讓爸媽知道。</p>
+        </div>
+        <button type="button" class="btn wish-make" id="make-wish">我要許願</button>
+      </div>
+      <div class="wish-list" id="wish-list"></div>
+    </div>
+  </section>
+
   <main class="wrap">
     <div class="tools">
+      <div class="tabs" id="chips" role="group" aria-label="分類"></div>
       <label class="search">
         <span class="sr">搜尋食譜</span>
-        <input id="q" type="search" placeholder="找找看：蛋、麵、湯…" autocomplete="off">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input id="q" type="search" placeholder="搜尋菜名或食材" autocomplete="off">
       </label>
-      <div class="chips" id="chips" role="group" aria-label="分類"></div>
     </div>
+    <p class="count" id="count"></p>
     <div class="grid" id="grid"></div>
-    <p class="empty" id="empty" hidden>找不到這道菜。換個字試試看，或請大人把它加進食譜裡。</p>
-    <p class="sync" id="sync"></p>
+    <p class="empty" id="empty" hidden>找不到這道菜。換個關鍵字試試，或請大人把它加進食譜裡。</p>
   </main>
+
+  <footer class="foot"><div class="wrap" id="sync"></div></footer>
 
   <dialog id="detail" aria-labelledby="d-title">
     <div id="detail-body"></div>
+  </dialog>
+  <dialog id="login" class="login" aria-labelledby="login-title">
+    <form id="login-form" class="login-in">
+      <div class="login-face" id="login-face" aria-hidden="true"></div>
+      <h2 class="login-title" id="login-title">請輸入密碼</h2>
+      <input type="email" id="login-email" autocomplete="username" hidden>
+      <label class="sr" for="login-pw">密碼</label>
+      <input id="login-pw" type="password" autocomplete="current-password" placeholder="密碼" required>
+      <p class="login-err" id="login-err" role="alert"></p>
+      <div class="login-btns">
+        <button type="button" class="btn-ghost" id="login-cancel">取消</button>
+        <button type="submit" class="btn" id="login-go">登入</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="wish" class="login wish-dlg" aria-labelledby="wish-title">
+    <form id="wish-form" class="wish-in" novalidate>
+      <h2 class="login-title" id="wish-title">許個願</h2>
+      <label class="f-label" for="wish-dish">想吃什麼？</label>
+      <select id="wish-dish" class="f-input"></select>
+      <input id="wish-text" class="f-input" type="text" maxlength="30" placeholder="寫下想吃的菜，例如：咖哩飯" hidden>
+      <fieldset class="f-set">
+        <legend class="f-label">哪一天？</legend>
+        <div class="seg" id="wish-when">
+          <button type="button" data-when="today" aria-pressed="true">今天</button>
+          <button type="button" data-when="tomorrow" aria-pressed="false">明天</button>
+          <button type="button" data-when="pick" aria-pressed="false">選日期</button>
+        </div>
+        <label class="sr" for="wish-date">日期</label>
+        <input id="wish-date" class="f-input" type="date" hidden>
+      </fieldset>
+      <p class="login-err" id="wish-err" role="alert"></p>
+      <div class="login-btns">
+        <button type="button" class="btn-ghost" id="wish-cancel">取消</button>
+        <button type="submit" class="btn" id="wish-go">許願</button>
+      </div>
+    </form>
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

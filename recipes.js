@@ -1,20 +1,25 @@
 // ===== 家人名單 =====
 // id 用英文或數字（不要重複、之後不要改，評分是用 id 記錄的）
 // name 和 emoji 可以隨時改
+// parent: true 的人可以「答應」或刪除任何人的願望
+// email：開啟登入功能時，填這個人在 Firebase 建立的帳號（不需要是真的信箱，例如 dad@ourfamily.home）
 const FAMILY = [
-  { id: "dad", name: "爸爸", emoji: "🧔" },
-  { id: "mom", name: "媽媽", emoji: "👩" },
-  { id: "kid1", name: "哥哥", emoji: "🦖" },
-  { id: "kid2", name: "妹妹", emoji: "🐰" },
+  { id: "dad", email: "dad@ourfamily.home", parent: true, name: "爸爸", emoji: "🧔" },
+  { id: "mom", email: "mom@ourfamily.home", parent: true, name: "媽媽", emoji: "👩" },
+  { id: "kid1", email: "kid1@ourfamily.home", name: "哥哥", emoji: "🦖" },
+  { id: "kid2", email: "kid2@ourfamily.home", name: "妹妹", emoji: "🐰" },
 ];
 
 // ===== 食譜 =====
 // 新增一道菜：複製一整段 { ... }, 貼在最後面再改內容即可
 // level：1 = 簡單、2 = 要一點耐心、3 = 請大人一起做
-// image：可留空。要放照片就把照片放進 images 資料夾，寫 "images/檔名.jpg"
+// subtitle：菜名下面的一行小字，可留空
+// image：可留空（強烈建議放照片，版面以照片為主）。要放照片就把照片放進 images 資料夾，寫 "images/檔名.jpg"
+// steps：每一步可以是文字，或 { text: "說明", image: "images/xxx.jpg" } 讓步驟附照片
 const RECIPES = [
   {
     id: "tomato-egg",
+    subtitle: "酸甜番茄配滑嫩炒蛋",
     title: "番茄炒蛋",
     from: "媽媽",
     emoji: "🍅",
@@ -35,6 +40,7 @@ const RECIPES = [
   },
   {
     id: "braised-pork-rice",
+    subtitle: "紅蔥酥香滷五花，淋在白飯上",
     title: "阿嬤的滷肉飯",
     from: "阿嬤",
     emoji: "🍚",
@@ -55,6 +61,7 @@ const RECIPES = [
   },
   {
     id: "corn-soup",
+    subtitle: "牛奶玉米湯底與蛋花",
     title: "玉米濃湯",
     from: "爸爸",
     emoji: "🌽",
@@ -75,6 +82,7 @@ const RECIPES = [
   },
   {
     id: "weekend-pancake",
+    subtitle: "蓬鬆煎餅佐蜂蜜或果醬",
     title: "週末鬆餅",
     from: "爸爸",
     emoji: "🥞",
@@ -96,6 +104,7 @@ const RECIPES = [
   },
   {
     id: "scallion-noodles",
+    subtitle: "現炸蔥油與醬油拌麵",
     title: "蔥油拌麵",
     from: "媽媽",
     emoji: "🍜",
@@ -116,6 +125,7 @@ const RECIPES = [
   },
   {
     id: "fruit-yogurt",
+    subtitle: "新鮮水果、穀片與蜂蜜",
     title: "水果優格杯",
     from: "哥哥",
     emoji: "🍓",
