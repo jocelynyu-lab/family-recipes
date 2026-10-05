@@ -552,9 +552,16 @@
     $("#login-pw").focus();
   }
 
+  // 綁定事件；找不到元素時只在主控台提醒，不讓整個網站停擺
+  function on(sel, ev, fn) {
+    const el = $(sel);
+    if (!el) { console.warn("找不到 " + sel + "，請確認 index.html 是最新版"); return; }
+    el.addEventListener(ev, fn);
+  }
+
   // ---------- events ----------
   function bind() {
-    $("#who-list").addEventListener("click", (e) => {
+    on("#who-list", "click", (e) => {
       if (e.target.closest("[data-logout]")) {
         state.store.signOut().then(() => toast("已登出"));
         return;
@@ -574,7 +581,7 @@
     });
 
     const login = $("#login");
-    $("#login-form").addEventListener("submit", async (e) => {
+    on("#login-form", "submit", async (e) => {
       e.preventDefault();
       const m = FAMILY.find((x) => x.id === state.loginId);
       const pw = $("#login-pw").value;
@@ -594,11 +601,11 @@
         btn.disabled = false;
       }
     });
-    $("#login-cancel").addEventListener("click", () => login.close());
+    on("#login-cancel", "click", () => login.close());
 
     // ---- 許願 ----
-    $("#make-wish").addEventListener("click", () => openWish(""));
-    $("#wish-tags").addEventListener("click", (e) => {
+    on("#make-wish", "click", () => openWish(""));
+    on("#wish-tags", "click", (e) => {
       const b = e.target.closest("[data-wtag]");
       if (!b) return;
       state.wishTag = b.dataset.wtag;
@@ -607,19 +614,19 @@
       const again = $(`#wish-tags [data-wtag="${CSS.escape(state.wishTag)}"]`);
       if (again) again.focus();
     });
-    $("#wish-dish").addEventListener("change", (e) => {
+    on("#wish-dish", "change", (e) => {
       const other = e.target.value === "__other";
       $("#wish-text").hidden = !other;
       if (other) $("#wish-text").focus();
     });
-    $("#wish-when").addEventListener("click", (e) => {
+    on("#wish-when", "click", (e) => {
       const b = e.target.closest("[data-when]");
       if (!b) return;
       setWhen(b.dataset.when);
       if (b.dataset.when === "pick") $("#wish-date").focus();
     });
-    $("#wish-cancel").addEventListener("click", () => $("#wish").close());
-    $("#wish-form").addEventListener("submit", async (e) => {
+    on("#wish-cancel", "click", () => $("#wish").close());
+    on("#wish-form", "submit", async (e) => {
       e.preventDefault();
       const err = $("#wish-err");
       const v = $("#wish-dish").value;
@@ -646,7 +653,7 @@
         btn.disabled = false;
       }
     });
-    $("#wish-list").addEventListener("click", async (e) => {
+    on("#wish-list", "click", async (e) => {
       const open = e.target.closest("[data-open]");
       if (open) { openRecipe(open.dataset.open); return; }
       const g = e.target.closest("[data-grant]");
@@ -666,7 +673,7 @@
       }
     });
 
-    $("#chips").addEventListener("click", (e) => {
+    on("#chips", "click", (e) => {
       if (e.target.closest("[data-clear-tags]")) {
         state.tags.clear();
       } else {
@@ -681,12 +688,12 @@
       if (again) again.focus();
     });
 
-    $("#q").addEventListener("input", (e) => {
+    on("#q", "input", (e) => {
       state.query = e.target.value;
       renderGrid();
     });
 
-    $("#grid").addEventListener("click", (e) => {
+    on("#grid", "click", (e) => {
       const b = e.target.closest("[data-open]");
       if (b) openRecipe(b.dataset.open);
     });
