@@ -1,23 +1,17 @@
 // ===== 家人名單 =====
-// id 用英文或數字（不要重複、之後不要改，評分是用 id 記錄的）
-// name 和 emoji 可以隨時改
-// parent: true 的人可以「答應」或刪除任何人的願望
-// email：開啟登入功能時，填這個人在 Firebase 建立的帳號（不需要是真的信箱，例如 dad@ourfamily.home）
+
 const FAMILY = [
-  { id: "Dad",   email: "archie@ourfamily.home",  parent: true, name: "Dad",   emoji: "🧔" },
-  { id: "Mom",   email: "jocelyn@ourfamily.home", parent: true, name: "Mom",   emoji: "👩" },
-  { id: "Ethan", email: "ethan@ourfamily.home",   name: "Ethan", emoji: "🦖" },
-  { id: "Rosie", email: "rosie@ourfamily.home",   name: "Rosie", emoji: "🌸" },
-  { id: "Heng",  email: "heng@ourfamily.home",    name: "Heng",  emoji: "🐼" },
+  { id: "Dad",   email: "archie@ourfamily.home",  parent: true, name: "Dad",   emoji: "🦥" },
+  { id: "Mom",   email: "jocelyn@ourfamily.home", parent: true, name: "Mom",   emoji: "🦔" },
+  { id: "Ethan", email: "ethan@ourfamily.home",   name: "Ethan", emoji: "🐶" },
+  { id: "Rosie", email: "rosie@ourfamily.home",   name: "Rosie", emoji: "🐱" },
+  { id: "Heng",  email: "heng@ourfamily.home",    name: "Heng",  emoji: "🫪" },
 ];
 
 // ===== 分類標籤 =====
-// 篩選時：同一組裡選多個 = 「任一個符合」；不同組一起選 = 「都要符合」
-// 例如選「豬肉」+「中式」→ 中式的豬肉料理
-// 想新增標籤：加在這裡，再寫進食譜的 tags 即可
 const TAG_GROUPS = [
-  { name: "類型", tags: ["早餐", "湯品"] },
-  { name: "主食材", tags: ["豬肉", "牛肉", "雞肉", "蔬菜"] },
+  { name: "類型", tags: ["早餐","主餐","點心","湯品"] },
+  { name: "主食材", tags: ["豬肉", "牛肉", "雞肉","海鮮", "蔬菜"] },
   { name: "料理", tags: ["中式", "西式", "日式"] },
 ];
 
@@ -33,7 +27,7 @@ const RECIPES = [
     id: "tomato-egg",
     subtitle: "酸甜番茄配滑嫩炒蛋",
     title: "番茄炒蛋",
-    from: "媽媽",
+    from: "",
     emoji: "🍅",
     tags: ["中式", "蔬菜"],
     time: 15,
@@ -53,8 +47,8 @@ const RECIPES = [
   {
     id: "braised-pork-rice",
     subtitle: "紅蔥酥香滷五花，淋在白飯上",
-    title: "阿嬤的滷肉飯",
-    from: "阿嬤",
+    title: "經典肉燥",
+    from: "",
     emoji: "🍚",
     tags: ["中式", "豬肉"],
     time: 90,
@@ -182,8 +176,8 @@ const RECIPES = [
     id: "tomato-beef-soup",
     subtitle: "番茄、牛肋條和馬鈴薯燉成一鍋",
     title: "番茄牛肉湯",
-    from: "爸爸",
-    emoji: "🥣",
+    from: "媽媽",
+    emoji: "🍲",
     tags: ["湯品", "牛肉", "中式"],
     time: 120,
     level: 3,
@@ -228,7 +222,7 @@ const RECIPES = [
     id: "mapo-tofu",
     title: "麻婆豆腐",
     subtitle: "嫩豆腐和絞肉，很下飯的家常版",
-    from: "爸爸",
+    from: "媽媽",
     emoji: "🌶️",
     tags: ["豬肉", "中式"],
     time: 25,
