@@ -3,7 +3,7 @@
 
   const MEMBER_KEY = "family-recipes:member";
   const RATING_KEY = "family-recipes:ratings";
-  const LEVELS = { 1: "簡單", 2: "要一點耐心", 3: "請大人一起做" };
+  const LEVELS = { 1: "簡單", 2: "中級", 3: "困難" };
   const ALL = "全部";
   const NOTE_MAX = 200;
   const WISH_KEY = "family-recipes:wishes";
@@ -280,7 +280,7 @@
   };
   const PH = {
     早餐: "#fbefd6", 湯品: "#e3eefb", 豬肉: "#fde4df", 牛肉: "#f6e1da", 雞肉: "#fcebd9",
-    蔬菜: "#e3f2e1", 中式: "#fde8e1", 西式: "#ebe8f7", 日式: "#f7e6ec",
+    蔬食: "#e3f2e1", 中式: "#fde8e1", 西式: "#ebe8f7", 海鮮: "#d2e9ff",日式: "#f7e6ec",
   };
   // 舊格式相容：只有 category 的食譜，當成一個標籤
   const tagsOf = (r) => (Array.isArray(r.tags) ? r.tags : r.category ? [r.category] : []);
@@ -528,10 +528,10 @@
               <div class="wish-main">
                 <span class="wish-who">${esc(nm(m.name))}想吃</span>
                 ${dish}
-                ${w.granted ? `<span class="wish-ok">✓ 爸媽答應了</span>` : ""}
+                ${w.granted ? `<span class="wish-ok"> ✅</span>` : ""}
               </div>
               <div class="wish-acts">
-                ${isParent ? `<button type="button" class="mini${w.granted ? "" : " mini-solid"}" data-grant="${esc(w.id)}">${w.granted ? "取消答應" : "答應"}</button>` : ""}
+                ${isParent ? `<button type="button" class="mini${w.granted ? "" : " mini-solid"}" data-grant="${esc(w.id)}">${w.granted ? "取消" : "答應"}</button>` : ""}
                 ${canDel ? `<button type="button" class="mini" data-del-wish="${esc(w.id)}" aria-label="刪除${esc(m.name)}的願望">刪除</button>` : ""}
               </div>
             </li>`;
