@@ -7,6 +7,8 @@
   const ALL = "全部";
   const NOTE_MAX = 200;
   const WISH_KEY = "family-recipes:wishes";
+  const REVIEW_KEY = "family-recipes:reviews";
+  const REVIEW_SHOW = 8; // 評分紀錄一開始顯示幾筆
   const WISH_TEXT_MAX = 30;
 
   const $ = (s) => document.querySelector(s);
@@ -24,6 +26,8 @@
     checked: {}, // recipeId -> Set of ingredient indexes
     drafts: {},  // recipeId -> 還沒送出的評語草稿
     wishes: [],  // 許願清單
+    reviews: [], // 每一次的評分紀錄（同一人可以評很多次）
+    showAll: {}, // recipeId -> 是否展開全部紀錄
     store: null,
   };
 
@@ -75,6 +79,7 @@
     };
     let listener = () => {};
     let wishListener = () => {};
+    let reviewListener = () => {};
     return {
       shared: false,
       subscribe(fn) { listener = fn; fn(read()); },
@@ -85,6 +90,14 @@
         listener(all);
       },
       // ---- 許願 ----
+      // ---- 評分紀錄 ----
+      subscribeReviews(fn) { reviewListener = fn; fn(readR()); },
+      async addReview(v) {
+        const all = readR();
+        all.push(Object.assign({ id: "r" + Date.now() + Math.random().toString(36).slice(2, 6) }, v));
+        writeR(all);
+      },
+      async deleteReview(id) { writeR(readR().filter((v) => v.id !== id)); },
       subscribeWishes(fn) { wishListener = fn; fn(readW()); },
       async addWish(w) {
         const all = readW();
@@ -103,6 +116,10 @@
       } catch (e) { return []; }
     }
     function writeW(all) { localStorage.setItem(WISH_KEY, JSON.stringify(all)); wishListener(all); }
+    function readR() {
+      try { return JSON.parse(localStorage.getItem(REVIEW_KEY)) || []; } catch (e) { return []; }
+    }
+    function writeR(all) { localStorage.setItem(REVIEW_KEY, JSON.stringify(all)); reviewListener(all); }
   }
 
   async function firebaseStore(cfg) {
@@ -114,6 +131,9 @@
     const auth = firebase.auth();
     const col = firebase.firestore().collection("ratings");
     const wcol = firebase.firestore().collection("wishes");
+    const rcol = firebase.firestore().collection("reviews");
+    let reviewListener = () => {};
+    let runsub = null;
     let listener = () => {};
     let wishListener = () => {};
     let unsub = null;
@@ -126,6 +146,7 @@
         auth.onAuthStateChanged((user) => {
           if (unsub) { unsub(); unsub = null; }
           if (wunsub) { wunsub(); wunsub = null; }
+          if (runsub) { runsub(); runsub = null; }
           if (user) {
             unsub = col.onSnapshot(
               (snap) => {
@@ -136,6 +157,17 @@
               (err) => {
                 console.error(err);
                 toast("評分沒辦法讀取，請檢查 Firebase 規則設定");
+              }
+            );
+            runsub = rcol.onSnapshot(
+              (snap) => {
+                const arr = [];
+                snap.forEach((d) => arr.push(Object.assign({ id: d.id }, d.data())));
+                reviewListener(arr);
+              },
+              (err) => {
+                console.error(err);
+                toast("評分紀錄沒辦法讀取，請檢查 Firebase 規則設定");
               }
             );
             wunsub = wcol.where("date", ">=", ymd(new Date())).onSnapshot(
@@ -152,6 +184,7 @@
           } else {
             listener({});
             wishListener([]);
+            reviewListener([]);
           }
           fn(user);
         });
@@ -160,6 +193,9 @@
       signOut() { return auth.signOut(); },
       set(rid, mid, val) { return col.doc(rid).set({ [mid]: val }, { merge: true }); },
       subscribeWishes(fn) { wishListener = fn; },
+      subscribeReviews(fn) { reviewListener = fn; },
+      addReview(v) { return rcol.add(v); },
+      deleteReview(id) { return rcol.doc(id).delete(); },
       addWish(w) { return wcol.add(w); },
       updateWish(id, patch) { return wcol.doc(id).update(patch); },
       deleteWish(id) { return wcol.doc(id).delete(); },
@@ -195,23 +231,34 @@
     }
     return null;
   }
+  // 某道菜的全部評分紀錄（新到舊）。舊版「每人一則」的資料也會一起列出來
   function reviewsOf(rid) {
-    const r = state.ratings[rid] || {};
-    const out = {};
+    const out = [];
+    const legacy = state.ratings[rid] || {};
     FAMILY.forEach((m) => {
-      const rv = reviewOf(r[m.id]);
-      if (rv && rv.stars >= 1 && rv.stars <= 5) out[m.id] = rv;
+      const rv = reviewOf(legacy[m.id]);
+      if (rv && rv.stars >= 1 && rv.stars <= 5) {
+        out.push({ id: `old-${rid}-${m.id}`, legacy: true, recipe: rid, member: m.id,
+          stars: rv.stars, note: rv.note, date: rv.at ? ymd(new Date(rv.at)) : "", at: rv.at });
+      }
     });
-    return out;
+    state.reviews.forEach((v) => {
+      if (v.recipe === rid && FAMILY.some((m) => m.id === v.member) && v.stars >= 1 && v.stars <= 5) out.push(v);
+    });
+    return out.sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.at || 0) - (a.at || 0));
   }
+  function avgOf(list) { return list.reduce((a, b) => a + b.stars, 0) / list.length; }
   function scoreOf(rid) {
-    const list = Object.values(reviewsOf(rid));
+    const list = reviewsOf(rid);
     if (!list.length) return null;
-    return {
-      avg: list.reduce((a, b) => a + b.stars, 0) / list.length,
-      n: list.length,
-      notes: list.filter((x) => x.note.trim()).length,
-    };
+    return { avg: avgOf(list), n: list.length, notes: list.filter((x) => (x.note || "").trim()).length };
+  }
+  function dayLabel(d) {
+    if (!d) return "";
+    if (d === addDays(0)) return "今天";
+    if (d === addDays(-1)) return "昨天";
+    const [y, m, dd] = d.split("-").map(Number);
+    return y === new Date().getFullYear() ? `${m}/${dd}` : `${y}/${m}/${dd}`;
   }
   const fmtDate = (t) => (t ? new Date(t).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" }) : "");
   const starString = (n) => "★".repeat(n) + "☆".repeat(5 - n);
@@ -283,7 +330,7 @@
   function scoreHTML(s) {
     if (needsLogin() && !state.member) return `<span class="score-none">登入後看評分</span>`;
     return s
-      ? `<span class="ico"><span class="st" aria-hidden="true">★</span>${s.avg.toFixed(1)}（${s.n} 人）</span>`
+      ? `<span class="ico"><span class="st" aria-hidden="true">★</span>${s.avg.toFixed(1)}（${s.n} 次）</span>`
       : `<span class="score-none">還沒有人評分</span>`;
   }
 
@@ -322,50 +369,66 @@
     const ae = document.activeElement;
     const focusedStar = ae && ae.dataset ? ae.dataset.star : null;
     const noteFocus = ae && ae.id === "note" ? [ae.selectionStart, ae.selectionEnd] : null;
+    const dateFocus = ae && ae.id === "rv-date";
 
     const reviews = reviewsOf(r.id);
     const me = FAMILY.find((m) => m.id === state.member);
-    const myReview = me ? reviews[me.id] : null;
-    const mine = myReview ? myReview.stars : 0;
-    const draft = state.drafts[r.id] !== undefined ? state.drafts[r.id] : (myReview ? myReview.note : "");
+    const isParent = !!(me && me.parent);
+    const today = ymd(new Date());
+    const draft = state.drafts[r.id] || { stars: 0, note: "", date: today };
     const checked = state.checked[r.id] || new Set();
     const s = scoreOf(r.id);
 
     const rating = me
-      ? `<p class="rate-who">${esc(me.emoji)} ${esc(me.name)}，你給幾顆星？</p>
-         <div class="stars" role="group" aria-label="${esc(me.name)}的評分">
-           ${[1, 2, 3, 4, 5].map((n) =>
-             `<button type="button" class="star${mine >= n ? " on" : ""}" data-star="${n}" aria-label="${n} 顆星" aria-pressed="${mine === n}">★</button>`
-           ).join("")}
-         </div>
-         <div class="note-box">
+      ? `<p class="rate-who">${esc(me.emoji)} ${esc(me.name)}，記錄這次吃起來的感覺</p>
+         <div class="rv-form">
+           <label class="note-label" for="rv-date">哪一天吃的？</label>
+           <input id="rv-date" class="f-input rv-date-in" type="date" max="${today}" value="${esc(draft.date)}">
+           <span class="note-label rv-stars-label">幾顆星？</span>
+           <div class="stars" role="group" aria-label="這次的評分">
+             ${[1, 2, 3, 4, 5].map((n) =>
+               `<button type="button" class="star${draft.stars >= n ? " on" : ""}" data-star="${n}" aria-label="${n} 顆星" aria-pressed="${draft.stars === n}">★</button>`
+             ).join("")}
+           </div>
            <label for="note" class="note-label">想說的話（可以不寫）</label>
-           <textarea id="note" maxlength="${NOTE_MAX}" rows="3" placeholder="例如：蛋可以再嫩一點！下次想加起司。">${esc(draft)}</textarea>
+           <textarea id="note" maxlength="${NOTE_MAX}" rows="3" placeholder="例如：這次比較鹹，下次少放一點醬油。">${esc(draft.note)}</textarea>
            <div class="note-foot">
-             <span class="note-count" id="note-count">${draft.length} / ${NOTE_MAX}</span>
-             <button type="button" class="btn note-send" data-save-note>${myReview && myReview.note ? "更新評語" : "送出評語"}</button>
+             <span class="note-count" id="note-count">${draft.note.length} / ${NOTE_MAX}</span>
+             <button type="button" class="btn note-send" data-save-review>送出這次的評分</button>
            </div>
          </div>`
-      : `<p class="rate-need">${needsLogin() ? "先點最上面你的頭像登入，就可以打分數、寫評語，也能看全家的評語。" : "先在最上面點選你是誰，就可以打分數、寫評語了。"}</p>`;
+      : `<p class="rate-need">${needsLogin() ? "先點最上面你的頭像登入，就可以打分數、寫評語，也能看全家的紀錄。" : "先在最上面點選你是誰，就可以打分數、寫評語了。"}</p>`;
 
     const canSee = !(needsLogin() && !me);
-    const ordered = FAMILY.slice().sort((a, b) => ((reviews[b.id] || {}).at || 0) - ((reviews[a.id] || {}).at || 0));
-    const reviewList = !canSee ? "" : `
-      <h4 class="rv-h">大家的評語</h4>
+    const perMember = FAMILY.map((m) => {
+      const mine = reviews.filter((v) => v.member === m.id);
+      return mine.length ? `<li><span aria-hidden="true">${esc(m.emoji)}</span> ${esc(m.name)}
+        <span class="st" aria-hidden="true">★</span>${avgOf(mine).toFixed(1)}<span class="pm-n">（${mine.length} 次）</span></li>` : "";
+    }).join("");
+    const shown = state.showAll[r.id] ? reviews : reviews.slice(0, REVIEW_SHOW);
+    const reviewList = !canSee ? "" : !reviews.length ? `<p class="rv-empty-all">還沒有人評分，來當第一個吧！</p>` : `
+      <div class="rv-sum">
+        <p class="rv-avg"><span class="st" aria-hidden="true">★</span> <strong>${s.avg.toFixed(1)}</strong> 全家平均（共 ${s.n} 次評分）</p>
+        <ul class="pm">${perMember}</ul>
+      </div>
+      <h4 class="rv-h">評分紀錄</h4>
       <ul class="reviews">
-        ${ordered.map((m) => {
-          const rv = reviews[m.id];
-          return `<li class="rv${rv ? "" : " rv-empty"}">
+        ${shown.map((v) => {
+          const m = FAMILY.find((x) => x.id === v.member);
+          const canDel = !v.legacy && (v.member === state.member || isParent);
+          return `<li class="rv">
             <div class="rv-head">
               <span class="rv-face" aria-hidden="true">${esc(m.emoji)}</span>
               <span class="rv-name">${esc(m.name)}</span>
-              ${rv ? `<span class="st" aria-label="${rv.stars} 顆星">${starString(rv.stars)}</span>` : `<span class="rv-none">還沒評</span>`}
-              ${rv && rv.at ? `<span class="rv-date">${fmtDate(rv.at)}</span>` : ""}
+              <span class="st" aria-label="${v.stars} 顆星">${starString(v.stars)}</span>
+              <span class="rv-date">${v.date ? esc(dayLabel(v.date)) + "吃的" : ""}</span>
+              ${canDel ? `<button type="button" class="mini rv-del" data-del-review="${esc(v.id)}" aria-label="刪除這筆評分">刪除</button>` : ""}
             </div>
-            ${rv && rv.note ? `<p class="rv-note">${esc(rv.note)}</p>` : ""}
+            ${v.note ? `<p class="rv-note">${esc(v.note)}</p>` : ""}
           </li>`;
         }).join("")}
-      </ul>`;
+      </ul>
+      ${reviews.length > REVIEW_SHOW ? `<button type="button" class="fclear rv-more" data-more-reviews>${state.showAll[r.id] ? "收起來" : `看全部 ${reviews.length} 筆紀錄`}</button>` : ""}`;
 
     const steps = (r.steps || []).map((st) => {
       const o = typeof st === "string" ? { text: st } : st || {};
@@ -423,6 +486,7 @@
       const ta = $("#note");
       if (ta) { ta.focus(); ta.setSelectionRange(noteFocus[0], noteFocus[1]); }
     }
+    if (dateFocus && $("#rv-date")) $("#rv-date").focus();
   }
 
   // ---------- wish list ----------
@@ -714,45 +778,67 @@
       }
       const wr = e.target.closest("[data-wish-recipe]");
       if (wr) { openWish(wr.dataset.wishRecipe); return; }
-      if (!state.member || !state.openId) return;
+      if (!state.openId) return;
       const rid = state.openId;
-      const mine = reviewsOf(rid)[state.member];
+
+      if (e.target.closest("[data-more-reviews]")) {
+        state.showAll[rid] = !state.showAll[rid];
+        renderDetail();
+        return;
+      }
+      if (!state.member) return;
+      const today = ymd(new Date());
+      const draft = state.drafts[rid] || (state.drafts[rid] = { stars: 0, note: "", date: today });
 
       const star = e.target.closest("[data-star]");
       if (star) {
-        const val = Number(star.dataset.star);
-        try {
-          await state.store.set(rid, state.member, { stars: val, note: mine ? mine.note : "", at: Date.now() });
-          toast(`給了 ${val} 顆星，謝謝！`);
-        } catch (err) {
-          console.error(err);
-          toast("評分沒有存成功，等一下再試一次");
-        }
+        draft.stars = Number(star.dataset.star);
+        renderDetail();
         return;
       }
 
-      const send = e.target.closest("[data-save-note]");
+      const del = e.target.closest("[data-del-review]");
+      if (del) {
+        if (!confirm("確定要刪除這筆評分嗎？")) return;
+        try { await state.store.deleteReview(del.dataset.delReview); toast("已刪除"); }
+        catch (err) { console.error(err); toast("沒有刪除成功，等一下再試一次"); }
+        return;
+      }
+
+      const send = e.target.closest("[data-save-review]");
       if (send) {
-        if (!mine) { toast("先點星星打分數，再送出評語"); return; }
-        const note = ($("#note").value || "").trim().slice(0, NOTE_MAX);
+        if (!draft.stars) { toast("先點星星打分數"); return; }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.date || "") || draft.date > today) { toast("請選今天或之前的日期"); return; }
         send.disabled = true;
         try {
-          await state.store.set(rid, state.member, { stars: mine.stars, note, at: Date.now() });
+          await state.store.addReview({
+            recipe: rid,
+            member: state.member,
+            stars: draft.stars,
+            note: (draft.note || "").trim().slice(0, NOTE_MAX),
+            date: draft.date,
+            at: Date.now(),
+          });
           delete state.drafts[rid];
           renderDetail();
-          toast(note ? "評語送出了！" : "評語已清除");
+          toast(`記下來了！${dayLabel(draft.date)}給 ${draft.stars} 顆星`);
         } catch (err) {
           console.error(err);
           send.disabled = false;
-          toast("評語沒有存成功，等一下再試一次");
+          toast("評分沒有存成功，等一下再試一次");
         }
       }
     });
     dlg.addEventListener("input", (e) => {
-      if (e.target.id !== "note" || !state.openId) return;
-      state.drafts[state.openId] = e.target.value;
-      const c = $("#note-count");
-      if (c) c.textContent = `${e.target.value.length} / ${NOTE_MAX}`;
+      if (!state.openId || (e.target.id !== "note" && e.target.id !== "rv-date")) return;
+      const draft = state.drafts[state.openId] || (state.drafts[state.openId] = { stars: 0, note: "", date: ymd(new Date()) });
+      if (e.target.id === "note") {
+        draft.note = e.target.value;
+        const c = $("#note-count");
+        if (c) c.textContent = `${e.target.value.length} / ${NOTE_MAX}`;
+      } else {
+        draft.date = e.target.value;
+      }
     });
     dlg.addEventListener("change", (e) => {
       const box = e.target.closest("[data-ing]");
@@ -784,6 +870,10 @@
       : "評分目前存在這台裝置上。";
     state.store.subscribe((all) => {
       state.ratings = all || {};
+      renderAll();
+    });
+    state.store.subscribeReviews((list) => {
+      state.reviews = list || [];
       renderAll();
     });
     state.store.subscribeWishes((list) => {

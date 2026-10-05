@@ -208,6 +208,19 @@ dialog::backdrop { background: rgba(15, 37, 71, 0.6); }
 .star.on { color: var(--star); }
 .star:hover { transform: scale(1.12); }
 .note-box { margin-top: 20px; max-width: 640px; }
+.rv-form { max-width: 640px; margin-top: 14px; }
+.rv-form .note-label { margin-top: 16px; }
+.rv-form .note-label:first-child { margin-top: 0; }
+.rv-date-in { max-width: 220px; }
+.rv-sum { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
+.rv-avg { margin: 0; font-size: 1.05rem; }
+.rv-avg strong { font-size: 1.5rem; font-weight: 900; color: var(--ink); }
+.pm { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.pm li { background: var(--white); padding: 6px 12px; border-radius: 999px; font-size: 0.9rem; }
+.pm-n { color: var(--muted); font-size: 0.8rem; }
+.rv-del { margin-left: 4px; }
+.rv-more { margin-top: 14px; }
+.rv-empty-all { margin: 28px 0 0; color: var(--muted); }
 .note-label { display: block; font-weight: 700; margin-bottom: 6px; }
 #note { width: 100%; padding: 12px 14px; font: inherit; line-height: 1.6; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; resize: vertical; }
 #note:focus { border-color: var(--navy); outline: none; box-shadow: 0 0 0 3px rgba(19,48,95,.12); }
