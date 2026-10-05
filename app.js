@@ -10,13 +10,15 @@
   const WISH_TEXT_MAX = 30;
 
   const $ = (s) => document.querySelector(s);
+  // 英文名字後面接中文時補一個空格，例如「Ethan 想吃」
+  const nm = (n) => (/[A-Za-z0-9]$/.test(String(n)) ? n + " " : n);
   const esc = (s) =>
     String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   const state = {
     member: readMember(),
     query: "",
-    cat: ALL,
+    tags: new Set(), // 目前選的篩選標籤
     ratings: {},
     openId: null,
     checked: {}, // recipeId -> Set of ingredient indexes
@@ -229,26 +231,52 @@
     note: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>',
     level: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V14M12 20V9M19 20V4"/></svg>',
   };
-  const PH = { "家常菜": "#fde8e1", "飯麵": "#fbefd6", "湯": "#e3eefb", "點心": "#f3e6f6" };
+  const PH = {
+    早餐: "#fbefd6", 湯品: "#e3eefb", 豬肉: "#fde4df", 牛肉: "#f6e1da", 雞肉: "#fcebd9",
+    蔬菜: "#e3f2e1", 中式: "#fde8e1", 西式: "#ebe8f7", 日式: "#f7e6ec",
+  };
+  // 舊格式相容：只有 category 的食譜，當成一個標籤
+  const tagsOf = (r) => (Array.isArray(r.tags) ? r.tags : r.category ? [r.category] : []);
+  const phColor = (r) => { const t = tagsOf(r).find((x) => PH[x]); return t ? PH[t] : "#eef0f4"; };
+
+  // 篩選分組：recipes.js 的 TAG_GROUPS，加上沒被分組的標籤
+  function tagGroups() {
+    const groups = (typeof TAG_GROUPS !== "undefined" ? TAG_GROUPS : []).map((g) => ({ name: g.name, tags: g.tags.slice() }));
+    const known = new Set(groups.flatMap((g) => g.tags));
+    const extra = [...new Set(RECIPES.flatMap(tagsOf))].filter((t) => !known.has(t));
+    if (extra.length) groups.push({ name: "其他", tags: extra });
+    return groups;
+  }
 
   function media(r, cls) {
     return r.image
       ? `<img src="${esc(r.image)}" alt="${cls === "d" ? esc(r.title) : ""}" loading="lazy">`
-      : `<span class="ph" style="--ph:${PH[r.category] || "#eef0f4"}" aria-hidden="true">${esc(r.emoji)}</span>`;
+      : `<span class="ph" style="--ph:${phColor(r)}" aria-hidden="true">${esc(r.emoji)}</span>`;
   }
 
   function renderChips() {
-    const cats = [ALL, ...new Set(RECIPES.map((r) => r.category).filter(Boolean))];
-    $("#chips").innerHTML = cats
-      .map((c) => `<button type="button" class="tab" data-cat="${esc(c)}" aria-pressed="${c === state.cat}">${esc(c)}</button>`)
-      .join("");
+    const groups = tagGroups();
+    const count = (t) => RECIPES.filter((r) => tagsOf(r).includes(t)).length;
+    $("#chips").innerHTML = groups.map((g) => `
+      <div class="fgroup" role="group" aria-label="${esc(g.name)}">
+        <span class="fgroup-name">${esc(g.name)}</span>
+        <div class="fchips">
+          ${g.tags.map((t) => `<button type="button" class="fchip" data-tag="${esc(t)}" aria-pressed="${state.tags.has(t)}">${esc(t)}<span class="fcount">${count(t)}</span></button>`).join("")}
+        </div>
+      </div>`).join("") +
+      (state.tags.size ? `<button type="button" class="fclear" data-clear-tags>清除篩選</button>` : "");
   }
 
   function matches(r) {
-    if (state.cat !== ALL && r.category !== state.cat) return false;
+    const rt = tagsOf(r);
+    // 同組 OR、跨組 AND
+    for (const g of tagGroups()) {
+      const picked = g.tags.filter((t) => state.tags.has(t));
+      if (picked.length && !picked.some((t) => rt.includes(t))) return false;
+    }
     const q = state.query.trim();
     if (!q) return true;
-    const hay = [r.title, r.subtitle, r.from, r.category, ...(r.ingredients || [])].join(" ");
+    const hay = [r.title, r.subtitle, r.from, ...rt, ...(r.ingredients || [])].join(" ");
     return hay.includes(q);
   }
 
@@ -267,7 +295,7 @@
 
   function cardHTML(r) {
     return `<button type="button" class="card" data-open="${esc(r.id)}">
-      <span class="media">${media(r)}${r.category ? `<span class="badge">${esc(r.category)}</span>` : ""}</span>
+      <span class="media">${media(r)}${tagsOf(r).length ? `<span class="badges">${tagsOf(r).slice(0, 3).map((t) => `<span class="badge">${esc(t)}</span>`).join("")}</span>` : ""}</span>
       <span class="card-title">${esc(r.title)}</span>
       ${r.subtitle ? `<span class="card-sub">${esc(r.subtitle)}</span>` : ""}
       <span class="card-meta">
@@ -350,9 +378,10 @@
       <div class="d-top">
         <div class="d-media">${media(r, "d")}</div>
         <div class="d-info">
-          <span class="d-from">${esc(r.from)}的拿手菜</span>
+          <span class="d-from">${esc(nm(r.from))}的拿手菜</span>
           <h2 id="d-title" class="d-title">${esc(r.title)}</h2>
           ${r.subtitle ? `<p class="d-sub">${esc(r.subtitle)}</p>` : ""}
+          ${tagsOf(r).length ? `<div class="d-tags">${tagsOf(r).map((t) => `<button type="button" class="d-tag" data-filter-tag="${esc(t)}" aria-label="看所有「${esc(t)}」的食譜">${esc(t)}</button>`).join("")}</div>` : ""}
           <dl class="d-stats">
             <div><dt>時間</dt><dd>${esc(r.time)} 分鐘</dd></div>
             <div><dt>份量</dt><dd>${r.serves ? esc(r.serves) + " 人份" : "—"}</dd></div>
@@ -433,7 +462,7 @@
             return `<li class="wish${w.granted ? " granted" : ""}">
               <span class="wish-face" aria-hidden="true">${esc(m.emoji)}</span>
               <div class="wish-main">
-                <span class="wish-who">${esc(m.name)}想吃</span>
+                <span class="wish-who">${esc(nm(m.name))}想吃</span>
                 ${dish}
                 ${w.granted ? `<span class="wish-ok">✓ 爸媽答應了</span>` : ""}
               </div>
@@ -453,10 +482,9 @@
       return;
     }
     const sel = $("#wish-dish");
-    sel.innerHTML = `<option value="">選一道菜…</option>` +
-      RECIPES.map((r) => `<option value="${esc(r.id)}">${esc(r.emoji)} ${esc(r.title)}</option>`).join("") +
-      `<option value="__other">其他（自己寫）</option>`;
-    sel.value = recipeId || "";
+    state.wishTag = "";
+    renderWishTags();
+    fillWishOptions(recipeId || "");
     $("#wish-text").value = "";
     $("#wish-text").hidden = true;
     setWhen("today");
@@ -467,6 +495,25 @@
     $("#wish").showModal();
     (recipeId ? $("#wish-go") : sel).focus();
   }
+  // 許願表單：用標籤縮小菜單
+  function renderWishTags() {
+    const used = new Set(RECIPES.flatMap(tagsOf));
+    const tags = tagGroups().flatMap((g) => g.tags).filter((t) => used.has(t));
+    $("#wish-tags").innerHTML = ["", ...tags].map((t) =>
+      `<button type="button" class="wtag" data-wtag="${esc(t)}" aria-pressed="${t === state.wishTag}">${t ? esc(t) : "全部"}</button>`
+    ).join("");
+  }
+  function fillWishOptions(keep) {
+    const sel = $("#wish-dish");
+    const list = RECIPES.filter((r) => !state.wishTag || tagsOf(r).includes(state.wishTag));
+    sel.innerHTML = `<option value="">選一道菜…（${list.length} 道）</option>` +
+      list.map((r) => `<option value="${esc(r.id)}">${esc(r.emoji)} ${esc(r.title)}</option>`).join("") +
+      `<option value="__other">其他（自己寫）</option>`;
+    const ok = keep === "__other" || list.some((r) => r.id === keep);
+    sel.value = ok ? keep : "";
+    $("#wish-text").hidden = sel.value !== "__other";
+  }
+
   function setWhen(v) {
     state.when = v;
     document.querySelectorAll("#wish-when [data-when]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.when === v)));
@@ -551,6 +598,15 @@
 
     // ---- 許願 ----
     $("#make-wish").addEventListener("click", () => openWish(""));
+    $("#wish-tags").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-wtag]");
+      if (!b) return;
+      state.wishTag = b.dataset.wtag;
+      renderWishTags();
+      fillWishOptions($("#wish-dish").value);
+      const again = $(`#wish-tags [data-wtag="${CSS.escape(state.wishTag)}"]`);
+      if (again) again.focus();
+    });
     $("#wish-dish").addEventListener("change", (e) => {
       const other = e.target.value === "__other";
       $("#wish-text").hidden = !other;
@@ -611,11 +667,18 @@
     });
 
     $("#chips").addEventListener("click", (e) => {
-      const b = e.target.closest("[data-cat]");
-      if (!b) return;
-      state.cat = b.dataset.cat;
+      if (e.target.closest("[data-clear-tags]")) {
+        state.tags.clear();
+      } else {
+        const b = e.target.closest("[data-tag]");
+        if (!b) return;
+        const t = b.dataset.tag;
+        state.tags.has(t) ? state.tags.delete(t) : state.tags.add(t);
+      }
       renderChips();
       renderGrid();
+      const again = e.target.closest("[data-tag]") && $(`#chips [data-tag="${CSS.escape(e.target.closest("[data-tag]").dataset.tag)}"]`);
+      if (again) again.focus();
     });
 
     $("#q").addEventListener("input", (e) => {
@@ -631,6 +694,17 @@
     const dlg = $("#detail");
     dlg.addEventListener("click", async (e) => {
       if (e.target === dlg || e.target.closest("[data-close]")) { dlg.close(); return; }
+      const ft = e.target.closest("[data-filter-tag]");
+      if (ft) {
+        state.tags = new Set([ft.dataset.filterTag]);
+        state.query = "";
+        $("#q").value = "";
+        dlg.close();
+        renderChips();
+        renderGrid();
+        $("#chips").scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
       const wr = e.target.closest("[data-wish-recipe]");
       if (wr) { openWish(wr.dataset.wishRecipe); return; }
       if (!state.member || !state.openId) return;

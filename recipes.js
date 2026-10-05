@@ -4,10 +4,11 @@
 // parent: true 的人可以「答應」或刪除任何人的願望
 // email：開啟登入功能時，填這個人在 Firebase 建立的帳號（不需要是真的信箱，例如 dad@ourfamily.home）
 const FAMILY = [
-  { id: "dad", email: "dad@ourfamily.home", parent: true, name: "爸爸", emoji: "🧔" },
-  { id: "mom", email: "mom@ourfamily.home", parent: true, name: "媽媽", emoji: "👩" },
-  { id: "kid1", email: "kid1@ourfamily.home", name: "哥哥", emoji: "🦖" },
-  { id: "kid2", email: "kid2@ourfamily.home", name: "妹妹", emoji: "🐰" },
+  { id: "Dad",   email: "archie@ourfamily.home",  parent: true, name: "Dad",   emoji: "🧔" },
+  { id: "Mom",   email: "jocelyn@ourfamily.home", parent: true, name: "Mom",   emoji: "👩" },
+  { id: "Ethan", email: "ethan@ourfamily.home",   name: "Ethan", emoji: "🦖" },
+  { id: "Rosie", email: "rosie@ourfamily.home",   name: "Rosie", emoji: "🌸" },
+  { id: "Heng",  email: "heng@ourfamily.home",    name: "Heng",  emoji: "🐼" },
 ];
 
 // ===== 分類標籤 =====
@@ -138,7 +139,7 @@ const RECIPES = [
     id: "fruit-yogurt",
     subtitle: "新鮮水果、穀片與蜂蜜",
     title: "水果優格杯",
-    from: "哥哥",
+    from: "Ethan",
     emoji: "🍓",
     tags: ["早餐", "西式"],
     time: 10,
@@ -509,7 +510,7 @@ const RECIPES = [
     id: "seaweed-egg-soup",
     title: "紫菜蛋花湯",
     subtitle: "最快上桌的一道湯，蛋花飄飄",
-    from: "哥哥",
+    from: "Ethan",
     emoji: "🥚",
     tags: ["湯品", "中式"],
     time: 10,
