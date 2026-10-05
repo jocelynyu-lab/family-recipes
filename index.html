@@ -43,13 +43,14 @@
 
   <main class="wrap">
     <div class="tools">
-      <div class="tabs" id="chips" role="group" aria-label="分類"></div>
+      <h2 class="tools-h">找食譜</h2>
       <label class="search">
         <span class="sr">搜尋食譜</span>
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
         <input id="q" type="search" placeholder="搜尋菜名或食材" autocomplete="off">
       </label>
     </div>
+    <div class="filters" id="chips" aria-label="分類篩選"></div>
     <p class="count" id="count"></p>
     <div class="grid" id="grid"></div>
     <p class="empty" id="empty" hidden>找不到這道菜。換個關鍵字試試，或請大人把它加進食譜裡。</p>
@@ -78,6 +79,7 @@
     <form id="wish-form" class="wish-in" novalidate>
       <h2 class="login-title" id="wish-title">許個願</h2>
       <label class="f-label" for="wish-dish">想吃什麼？</label>
+      <div class="wtags" id="wish-tags" role="group" aria-label="先選分類，縮小菜單"></div>
       <select id="wish-dish" class="f-input"></select>
       <input id="wish-text" class="f-input" type="text" maxlength="30" placeholder="寫下想吃的菜，例如：咖哩飯" hidden>
       <fieldset class="f-set">
