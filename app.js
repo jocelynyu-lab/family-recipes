@@ -558,7 +558,7 @@
                 <span class="wish-who">${esc(nm(m.name))}想吃</span>
                 <span class="wish-line">
                   ${dish}
-                  ${w.granted ? `<span class="wish-ok">✓ 爸媽答應了</span>` : ""}
+                  ${w.granted ? `<span class="wish-ok">✓ 媽咪說OK</span>` : ""}
                 </span>
               </div>
               <div class="wish-acts">
