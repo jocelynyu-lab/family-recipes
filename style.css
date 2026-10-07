@@ -74,19 +74,24 @@ img { max-width: 100%; }
 .wish-day.is-today { border-top-color: var(--navy); }
 .wish-date { margin: 0 0 6px; font-size: 1rem; font-weight: 900; color: var(--navy); }
 .wish-items { list-style: none; margin: 0; padding: 0; }
-.wish { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.wish { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
 .wish:first-child { border-top: 0; }
 .wish-face { width: 36px; height: 36px; }
+.wish-person { flex: none; width: 52px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.wish-pname { max-width: 100%; font-size: 0.75rem; color: var(--muted); line-height: 1.2; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wish-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.wish-who { font-size: 0.82rem; color: var(--muted); }
+.wish-verb { font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
 .wish-dish { font-weight: 700; overflow-wrap: anywhere; }
 button.wish-dish { padding: 0; border: 0; background: none; text-align: left; cursor: pointer; color: var(--navy); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
-.wish-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
-.wish-ok { font-size: 0.82rem; font-weight: 700; color: #1f7a4d; white-space: nowrap; }
-.wish-acts { display: flex; gap: 6px; flex: none; }
+.wish-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.wish-acts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; flex: none; max-width: 50%; }
 .mini { height: 30px; padding: 0 10px; font-size: 0.82rem; border: 1px solid var(--line); border-radius: 4px; background: var(--white); cursor: pointer; }
 .mini:hover { border-color: var(--navy); }
 .mini-solid { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.mini-ok { display: inline-flex; align-items: center; background: #e6f4ec; border-color: #9fd3b5; color: #1f7a4d; font-weight: 700; white-space: nowrap; }
+.mini-ok:hover { border-color: #1f7a4d; }
+.mini-ok.is-tag { cursor: default; }
+.mini-ok.is-tag:hover { border-color: #9fd3b5; }
 
 .wish-this { align-self: flex-start; margin-top: 18px; height: 44px; padding: 0 20px; border-radius: 4px; cursor: pointer; font-weight: 700; }
 

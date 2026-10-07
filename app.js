@@ -3,13 +3,14 @@
 
   const MEMBER_KEY = "family-recipes:member";
   const RATING_KEY = "family-recipes:ratings";
-  const LEVELS = { 1: "Easy", 2: "Medium", 3: "Hard" };
+  const LEVELS = { 1: "簡單", 2: "要一點耐心", 3: "請大人一起做" };
   const ALL = "全部";
   const NOTE_MAX = 200;
   const WISH_KEY = "family-recipes:wishes";
   const REVIEW_KEY = "family-recipes:reviews";
   const REVIEW_SHOW = 8; // 評分紀錄一開始顯示幾筆
   const WISH_TEXT_MAX = 30;
+  const WISH_PER_DAY = 3; // 每個人同一天最多幾個願望（Firestore 規則也要一起改）
 
   const $ = (s) => document.querySelector(s);
   // 英文名字後面接中文時補一個空格，例如「Ethan 想吃」
@@ -99,9 +100,10 @@
       },
       async deleteReview(id) { writeR(readR().filter((v) => v.id !== id)); },
       subscribeWishes(fn) { wishListener = fn; fn(readW()); },
-      async addWish(w) {
+      async addWish(w, id) {
         const all = readW();
-        all.push(Object.assign({ id: "w" + Date.now() + Math.random().toString(36).slice(2, 6) }, w));
+        if (all.some((x) => x.id === id)) throw new Error("slot taken");
+        all.push(Object.assign({ id }, w));
         writeW(all);
       },
       async updateWish(id, patch) {
@@ -196,7 +198,8 @@
       subscribeReviews(fn) { reviewListener = fn; },
       addReview(v) { return rcol.add(v); },
       deleteReview(id) { return rcol.doc(id).delete(); },
-      addWish(w) { return wcol.add(w); },
+      // 用「日期_成員_編號」當文件 id，Firestore 規則就能限制一天最多 3 個
+      addWish(w, id) { return wcol.doc(id).set(w); },
       updateWish(id, patch) { return wcol.doc(id).update(patch); },
       deleteWish(id) { return wcol.doc(id).delete(); },
     };
@@ -280,9 +283,9 @@
   };
   // 每個標籤的代表色（圖示顏色）；卡片底色會自動用它調淡
   const TAG_COLOR = {
-    早餐: "#D26900", 湯品: "#AE8F00", 豬肉: "#d0465c", 牛肉: "#a2471f", 雞肉: "#d9731a",
+    早餐: "#c27803", 湯品: "#1d6fb8", 豬肉: "#d0465c", 牛肉: "#a2471f", 雞肉: "#d9731a",
     蔬菜: "#2f8a4c", 中式: "#c9352b", 西式: "#6a4bc4", 日式: "#c2416f",
-    海鮮: "#0f7f86", 蔬食: "#2f8a4c", 麵食: "#b26b12", 點心: "#8600FF",
+    海鮮: "#0f7f86", 蔬食: "#2f8a4c", 麵食: "#b26b12", 點心: "#b03a8c",
   };
   // 舊格式相容：只有 category 的食譜，當成一個標籤
   const tagsOf = (r) => (Array.isArray(r.tags) ? r.tags : r.category ? [r.category] : []);
@@ -551,18 +554,24 @@
             const dish = r
               ? `<button type="button" class="wish-dish is-link" data-open="${esc(r.id)}"><span class="wd-ic" style="color:${colorOf(r)}">${recipeGlyph(r)}</span>${esc(r.title)}</button>`
               : `<span class="wish-dish">${esc(w.text)}</span>`;
-            const canDel = w.member === state.member || isParent;
+            // 爸媽答應後，許願的人就不能自己刪掉；爸媽隨時都能刪
+            const canDel = isParent || (w.member === state.member && !w.granted);
+            // 右側狀態：爸媽看到可以按的「答應／已答應」，其他人看到綠色標籤
+            const status = isParent
+              ? (w.granted
+                ? `<button type="button" class="mini mini-ok" data-grant="${esc(w.id)}" aria-pressed="true" title="再按一次可以取消答應">✓ 已答應</button>`
+                : `<button type="button" class="mini mini-solid" data-grant="${esc(w.id)}" aria-pressed="false">答應</button>`)
+              : (w.granted ? `<span class="mini mini-ok is-tag">✓ 媽咪OK</span>` : "");
             return `<li class="wish${w.granted ? " granted" : ""}">
-              ${avatar(m, "wish-face")}
+              <div class="wish-person">
+                ${avatar(m, "wish-face")}
+                <span class="wish-pname">${esc(m.name)}</span>
+              </div>
               <div class="wish-main">
-                <span class="wish-who">${esc(nm(m.name))}想吃</span>
-                <span class="wish-line">
-                  ${dish}
-                  ${w.granted ? `<span class="wish-ok">✓ 媽咪說OK</span>` : ""}
-                </span>
+                <span class="wish-line"><span class="wish-verb">想吃</span>${dish}</span>
               </div>
               <div class="wish-acts">
-                ${isParent ? `<button type="button" class="mini${w.granted ? "" : " mini-solid"}" data-grant="${esc(w.id)}">${w.granted ? "取消答應" : "答應"}</button>` : ""}
+                ${status}
                 ${canDel ? `<button type="button" class="mini" data-del-wish="${esc(w.id)}" aria-label="刪除${esc(m.name)}的願望">刪除</button>` : ""}
               </div>
             </li>`;
@@ -734,12 +743,19 @@
         : state.when === "tomorrow" ? addDays(1)
         : $("#wish-date").value;
       if (!date || date < ymd(new Date())) { err.textContent = "選今天或之後的日期。"; return; }
+      const used = new Set(state.wishes.map((x) => x.id));
+      const count = state.wishes.filter((x) => x.member === state.member && x.date === date).length;
+      const slot = [...Array(WISH_PER_DAY).keys()].map((i) => `${date}_${state.member}_${i + 1}`).find((id) => !used.has(id));
+      if (count >= WISH_PER_DAY || !slot) {
+        err.textContent = `${dateLabel(date)}已經許了 ${WISH_PER_DAY} 個願望囉，換一天吧！`;
+        return;
+      }
       const btn = $("#wish-go");
       btn.disabled = true;
       try {
         await state.store.addWish({
           member: state.member, date, recipeId: r ? r.id : "", text, at: Date.now(), granted: false,
-        });
+        }, slot);
         $("#wish").close();
         toast(`許願成功！${dateLabel(date)}想吃${text}`);
       } catch (ex) {
