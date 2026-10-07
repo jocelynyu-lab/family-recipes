@@ -282,6 +282,7 @@
   const TAG_COLOR = {
     早餐: "#c27803", 湯品: "#1d6fb8", 豬肉: "#d0465c", 牛肉: "#a2471f", 雞肉: "#d9731a",
     蔬菜: "#2f8a4c", 中式: "#c9352b", 西式: "#6a4bc4", 日式: "#c2416f",
+    海鮮: "#0f7f86", 蔬食: "#2f8a4c", 麵食: "#b26b12", 點心: "#b03a8c",
   };
   // 舊格式相容：只有 category 的食譜，當成一個標籤
   const tagsOf = (r) => (Array.isArray(r.tags) ? r.tags : r.category ? [r.category] : []);
@@ -469,7 +470,7 @@
       <div class="d-top">
         <div class="d-media">${media(r, "d")}</div>
         <div class="d-info">
-          <span class="d-from">${esc(nm(r.from))}的拿手菜</span>
+          ${r.from ? `<span class="d-from">${esc(nm(r.from))}的拿手菜</span>` : ""}
           <h2 id="d-title" class="d-title">${esc(r.title)}</h2>
           ${r.subtitle ? `<p class="d-sub">${esc(r.subtitle)}</p>` : ""}
           ${tagsOf(r).length ? `<div class="d-tags">${tagsOf(r).map((t) => `<button type="button" class="d-tag" data-filter-tag="${esc(t)}" aria-label="看所有「${esc(t)}」的食譜">${esc(t)}</button>`).join("")}</div>` : ""}
