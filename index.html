@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Avo's Recipes</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥑</text></svg>">
+  <title>我們家的食譜</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍳</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -13,9 +13,9 @@
 <body>
   <nav class="nav">
     <div class="wrap nav-in">
-      <a class="brand" href="./">Avo's Recipes </a>
+      <a class="brand" href="./">我們家的食譜</a>
       <div class="who" role="group" aria-label="現在是誰在看">
-        <span class="who-label">I am </span>
+        <span class="who-label">我是</span>
         <div class="who-list" id="who-list"></div>
       </div>
     </div>
@@ -23,8 +23,8 @@
 
   <header class="hero">
     <div class="wrap">
-      <h1 class="hero-title">今天想吃什麼？</h1>
-      <p class="hero-lede">看看家裡有什麼好吃的料理。挑一道幫它打分數。</p>
+      <h1 class="hero-title">今晚想吃什麼？</h1>
+      <p class="hero-lede">家裡每一道拿手菜都在這裡。挑一道一起做，吃完幫它打分數。</p>
     </div>
   </header>
 
@@ -32,8 +32,8 @@
     <div class="wrap">
       <div class="wish-top">
         <div>
-          <h2 class="wish-h" id="wish-h">⭐許願⭐ </h2>
-          <p class="wish-lede">想吃什麼，許個願讓爸媽知道。</p>
+          <h2 class="wish-h" id="wish-h">許願池</h2>
+          <p class="wish-lede">今天或哪一天想吃什麼，許個願讓爸媽知道。</p>
         </div>
         <button type="button" class="btn wish-make" id="make-wish">我要許願</button>
       </div>
@@ -81,6 +81,7 @@
       <label class="f-label" for="wish-dish">想吃什麼？</label>
       <div class="wtags" id="wish-tags" role="group" aria-label="先選分類，縮小菜單"></div>
       <select id="wish-dish" class="f-input"></select>
+      <label class="sr" for="wish-text">自己寫想吃的菜</label>
       <input id="wish-text" class="f-input" type="text" maxlength="30" placeholder="寫下想吃的菜，例如：咖哩飯" hidden>
       <fieldset class="f-set">
         <legend class="f-label">哪一天？</legend>
@@ -101,6 +102,7 @@
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script src="icons.js"></script>
   <script src="recipes.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
