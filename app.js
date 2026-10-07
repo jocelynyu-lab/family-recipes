@@ -3,7 +3,7 @@
 
   const MEMBER_KEY = "family-recipes:member";
   const RATING_KEY = "family-recipes:ratings";
-  const LEVELS = { 1: "簡單", 2: "中級", 3: "困難" };
+  const LEVELS = { 1: "簡單", 2: "要一點耐心", 3: "請大人一起做" };
   const ALL = "全部";
   const NOTE_MAX = 200;
   const WISH_KEY = "family-recipes:wishes";
@@ -267,7 +267,7 @@
   function renderWho() {
     $("#who-list").innerHTML = FAMILY.map(
       (m) => `<button type="button" class="who-btn" data-member="${esc(m.id)}" aria-pressed="${m.id === state.member}">
-        <span class="face" aria-hidden="true">${esc(m.emoji)}</span>${esc(m.name)}</button>`
+        ${avatar(m, "face")}${esc(m.name)}</button>`
     ).join("") + (needsLogin() && state.member ? `<button type="button" class="logout" data-logout>登出</button>` : "");
   }
 
@@ -278,13 +278,41 @@
     note: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>',
     level: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V14M12 20V9M19 20V4"/></svg>',
   };
-  const PH = {
-    早餐: "#fbefd6", 湯品: "#e3eefb", 豬肉: "#fde4df", 牛肉: "#f6e1da", 雞肉: "#fcebd9",
-    蔬食: "#e3f2e1", 中式: "#fde8e1", 西式: "#ebe8f7", 海鮮: "#d2e9ff",日式: "#f7e6ec",
+  // 每個標籤的代表色（圖示顏色）；卡片底色會自動用它調淡
+  const TAG_COLOR = {
+    早餐: "#c27803", 湯品: "#1d6fb8", 豬肉: "#d0465c", 牛肉: "#a2471f", 雞肉: "#d9731a",
+    蔬菜: "#2f8a4c", 中式: "#c9352b", 西式: "#6a4bc4", 日式: "#c2416f",
   };
   // 舊格式相容：只有 category 的食譜，當成一個標籤
   const tagsOf = (r) => (Array.isArray(r.tags) ? r.tags : r.category ? [r.category] : []);
-  const phColor = (r) => { const t = tagsOf(r).find((x) => PH[x]); return t ? PH[t] : "#eef0f4"; };
+  // 食譜的顏色：recipes.js 有寫 color 就用它，否則依 TAG_GROUPS 的順序找第一個有顏色的標籤
+  function colorOf(r) {
+    if (r.color) return r.color;
+    const rt = tagsOf(r);
+    for (const g of tagGroups()) for (const t of g.tags) if (rt.includes(t) && TAG_COLOR[t]) return TAG_COLOR[t];
+    return "#13305f";
+  }
+  function tint(hex, a) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+    if (!m) return `rgba(19,48,95,${a})`;
+    const n = parseInt(m[1], 16);
+    return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
+  }
+  const phColor = (r) => tint(colorOf(r), 0.12);
+
+  // Lucide 圖示（icons.js）；找不到圖示時退回 emoji
+  function svgIcon(name, cls) {
+    const inner = typeof ICONS !== "undefined" ? ICONS[name] : null;
+    if (!inner) return "";
+    return `<svg class="lc${cls ? " " + cls : ""}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+  }
+  const recipeGlyph = (r, cls) => svgIcon(r.icon, cls) || esc(r.emoji || "");
+  // 家人頭像：有色圓底＋圖示
+  function avatar(m, cls) {
+    const color = m.color || "#13305f";
+    const inner = svgIcon(m.icon) || esc(m.emoji || (m.name || "?").slice(0, 1));
+    return `<span class="av${cls ? " " + cls : ""}" style="--av:${color};--av-bg:${tint(color, 0.14)}" aria-hidden="true">${inner}</span>`;
+  }
 
   // 篩選分組：recipes.js 的 TAG_GROUPS，加上沒被分組的標籤
   function tagGroups() {
@@ -298,7 +326,7 @@
   function media(r, cls) {
     return r.image
       ? `<img src="${esc(r.image)}" alt="${cls === "d" ? esc(r.title) : ""}" loading="lazy">`
-      : `<span class="ph" style="--ph:${phColor(r)}" aria-hidden="true">${esc(r.emoji)}</span>`;
+      : `<span class="ph" style="--ph:${phColor(r)};color:${colorOf(r)}" aria-hidden="true">${recipeGlyph(r, "ph-ic")}</span>`;
   }
 
   function renderChips() {
@@ -380,7 +408,7 @@
     const s = scoreOf(r.id);
 
     const rating = me
-      ? `<p class="rate-who">${esc(me.emoji)} ${esc(me.name)}，記錄這次吃起來的感覺</p>
+      ? `<p class="rate-who">${avatar(me, "av-sm")} ${esc(me.name)}，記錄這次吃起來的感覺</p>
          <div class="rv-form">
            <label class="note-label" for="rv-date">哪一天吃的？</label>
            <input id="rv-date" class="f-input rv-date-in" type="date" max="${today}" value="${esc(draft.date)}">
@@ -402,7 +430,7 @@
     const canSee = !(needsLogin() && !me);
     const perMember = FAMILY.map((m) => {
       const mine = reviews.filter((v) => v.member === m.id);
-      return mine.length ? `<li><span aria-hidden="true">${esc(m.emoji)}</span> ${esc(m.name)}
+      return mine.length ? `<li>${avatar(m, "av-xs")} ${esc(m.name)}
         <span class="st" aria-hidden="true">★</span>${avgOf(mine).toFixed(1)}<span class="pm-n">（${mine.length} 次）</span></li>` : "";
     }).join("");
     const shown = state.showAll[r.id] ? reviews : reviews.slice(0, REVIEW_SHOW);
@@ -418,7 +446,7 @@
           const canDel = !v.legacy && (v.member === state.member || isParent);
           return `<li class="rv">
             <div class="rv-head">
-              <span class="rv-face" aria-hidden="true">${esc(m.emoji)}</span>
+              ${avatar(m, "rv-face")}
               <span class="rv-name">${esc(m.name)}</span>
               <span class="st" aria-label="${v.stars} 顆星">${starString(v.stars)}</span>
               <span class="rv-date">${v.date ? esc(dayLabel(v.date)) + "吃的" : ""}</span>
@@ -517,21 +545,23 @@
         <h3 class="wish-date">${esc(dateLabel(g.date))}</h3>
         <ul class="wish-items">
           ${g.items.map((w) => {
-            const m = FAMILY.find((x) => x.id === w.member) || { name: "?", emoji: "🙂" };
+            const m = FAMILY.find((x) => x.id === w.member) || { name: "?", icon: "smile" };
             const r = w.recipeId && RECIPES.find((x) => x.id === w.recipeId);
             const dish = r
-              ? `<button type="button" class="wish-dish is-link" data-open="${esc(r.id)}">${esc(r.emoji)} ${esc(r.title)}</button>`
+              ? `<button type="button" class="wish-dish is-link" data-open="${esc(r.id)}"><span class="wd-ic" style="color:${colorOf(r)}">${recipeGlyph(r)}</span>${esc(r.title)}</button>`
               : `<span class="wish-dish">${esc(w.text)}</span>`;
             const canDel = w.member === state.member || isParent;
             return `<li class="wish${w.granted ? " granted" : ""}">
-              <span class="wish-face" aria-hidden="true">${esc(m.emoji)}</span>
+              ${avatar(m, "wish-face")}
               <div class="wish-main">
                 <span class="wish-who">${esc(nm(m.name))}想吃</span>
-                ${dish}
-                ${w.granted ? `<span class="wish-ok"> ✅</span>` : ""}
+                <span class="wish-line">
+                  ${dish}
+                  ${w.granted ? `<span class="wish-ok">✓ 爸媽答應了</span>` : ""}
+                </span>
               </div>
               <div class="wish-acts">
-                ${isParent ? `<button type="button" class="mini${w.granted ? "" : " mini-solid"}" data-grant="${esc(w.id)}">${w.granted ? "取消" : "答應"}</button>` : ""}
+                ${isParent ? `<button type="button" class="mini${w.granted ? "" : " mini-solid"}" data-grant="${esc(w.id)}">${w.granted ? "取消答應" : "答應"}</button>` : ""}
                 ${canDel ? `<button type="button" class="mini" data-del-wish="${esc(w.id)}" aria-label="刪除${esc(m.name)}的願望">刪除</button>` : ""}
               </div>
             </li>`;
@@ -560,22 +590,26 @@
     (recipeId ? $("#wish-go") : sel).focus();
   }
   // 許願表單：用標籤縮小菜單
+  const OTHER = "__other";
   function renderWishTags() {
     const used = new Set(RECIPES.flatMap(tagsOf));
     const tags = tagGroups().flatMap((g) => g.tags).filter((t) => used.has(t));
     $("#wish-tags").innerHTML = ["", ...tags].map((t) =>
       `<button type="button" class="wtag" data-wtag="${esc(t)}" aria-pressed="${t === state.wishTag}">${t ? esc(t) : "全部"}</button>`
-    ).join("");
+    ).join("") +
+      `<button type="button" class="wtag wtag-other" data-wtag="${OTHER}" aria-pressed="${state.wishTag === OTHER}">＋ 其他（自己寫）</button>`;
   }
   function fillWishOptions(keep) {
     const sel = $("#wish-dish");
+    const other = state.wishTag === OTHER;
+    // 選「其他」時藏起菜單，改成自己輸入
+    sel.hidden = other;
+    $("#wish-text").hidden = !other;
+    if (other) return;
     const list = RECIPES.filter((r) => !state.wishTag || tagsOf(r).includes(state.wishTag));
     sel.innerHTML = `<option value="">選一道菜…（${list.length} 道）</option>` +
-      list.map((r) => `<option value="${esc(r.id)}">${esc(r.emoji)} ${esc(r.title)}</option>`).join("") +
-      `<option value="__other">其他（自己寫）</option>`;
-    const ok = keep === "__other" || list.some((r) => r.id === keep);
-    sel.value = ok ? keep : "";
-    $("#wish-text").hidden = sel.value !== "__other";
+      list.map((r) => `<option value="${esc(r.id)}">${esc(r.title)}</option>`).join("");
+    sel.value = list.some((r) => r.id === keep) ? keep : "";
   }
 
   function setWhen(v) {
@@ -607,7 +641,7 @@
     if (!m) return;
     if (!m.email) { toast(`${m.name}還沒有帳號，請大人到 recipes.js 設定 email`); return; }
     state.loginId = id;
-    $("#login-face").textContent = m.emoji;
+    $("#login-face").innerHTML = avatar(m, "av-lg");
     $("#login-title").textContent = `${m.name}，請輸入密碼`;
     $("#login-email").value = m.email;
     $("#login-pw").value = "";
@@ -675,13 +709,10 @@
       state.wishTag = b.dataset.wtag;
       renderWishTags();
       fillWishOptions($("#wish-dish").value);
+      $("#wish-err").textContent = "";
+      if (state.wishTag === OTHER) { $("#wish-text").focus(); return; }
       const again = $(`#wish-tags [data-wtag="${CSS.escape(state.wishTag)}"]`);
       if (again) again.focus();
-    });
-    on("#wish-dish", "change", (e) => {
-      const other = e.target.value === "__other";
-      $("#wish-text").hidden = !other;
-      if (other) $("#wish-text").focus();
     });
     on("#wish-when", "click", (e) => {
       const b = e.target.closest("[data-when]");
@@ -693,11 +724,11 @@
     on("#wish-form", "submit", async (e) => {
       e.preventDefault();
       const err = $("#wish-err");
-      const v = $("#wish-dish").value;
-      const r = RECIPES.find((x) => x.id === v);
-      const text = v === "__other" ? $("#wish-text").value.trim().slice(0, WISH_TEXT_MAX) : (r ? r.title : "");
-      if (!v) { err.textContent = "選一道想吃的菜。"; return; }
-      if (!text) { err.textContent = "寫下想吃的菜名。"; $("#wish-text").focus(); return; }
+      const other = state.wishTag === OTHER;
+      const r = other ? null : RECIPES.find((x) => x.id === $("#wish-dish").value);
+      const text = other ? $("#wish-text").value.trim().slice(0, WISH_TEXT_MAX) : (r ? r.title : "");
+      if (other && !text) { err.textContent = "寫下想吃的菜名。"; $("#wish-text").focus(); return; }
+      if (!other && !r) { err.textContent = "選一道想吃的菜，或點「其他」自己寫。"; $("#wish-dish").focus(); return; }
       const date = state.when === "today" ? addDays(0)
         : state.when === "tomorrow" ? addDays(1)
         : $("#wish-date").value;

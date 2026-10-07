@@ -35,10 +35,27 @@ img { max-width: 100%; }
   border: 1px solid var(--line); border-radius: 999px;
   background: var(--white); cursor: pointer; font-size: 0.95rem;
 }
-.who-btn .face { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--soft); font-size: 1.1rem; }
+.who-btn .face { width: 30px; height: 30px; }
 .who-btn:hover { border-color: var(--navy); }
 .who-btn[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--white); }
-.who-btn[aria-pressed="true"] .face { background: rgba(255,255,255,.18); }
+.who-btn[aria-pressed="true"] .face { background: var(--white); }
+
+/* ===== Lucide 圖示與頭像 ===== */
+.lc { display: block; width: 100%; height: 100%; }
+.av {
+  flex: none; display: inline-grid; place-items: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--av-bg, var(--soft)); color: var(--av, var(--navy));
+  vertical-align: middle; font-size: 1rem; line-height: 1;
+}
+.av .lc { width: 58%; height: 58%; }
+.av-xs { width: 22px; height: 22px; }
+.av-sm { width: 28px; height: 28px; margin-right: 2px; }
+.av-lg { width: 84px; height: 84px; }
+.av-lg .lc { width: 50%; height: 50%; stroke-width: 1.75; }
+.ph .ph-ic { width: 30%; height: auto; max-width: 120px; stroke-width: 1.5; }
+.d-media .ph .ph-ic { width: 26%; max-width: 150px; }
+.wd-ic { display: inline-block; width: 1.05em; height: 1.05em; margin-right: 6px; vertical-align: -0.12em; }
 
 /* ===== Hero ===== */
 .hero { padding: 56px 0 32px; }
@@ -59,12 +76,13 @@ img { max-width: 100%; }
 .wish-items { list-style: none; margin: 0; padding: 0; }
 .wish { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
 .wish:first-child { border-top: 0; }
-.wish-face { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--soft); font-size: 1.2rem; }
+.wish-face { width: 36px; height: 36px; }
 .wish-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .wish-who { font-size: 0.82rem; color: var(--muted); }
 .wish-dish { font-weight: 700; overflow-wrap: anywhere; }
 button.wish-dish { padding: 0; border: 0; background: none; text-align: left; cursor: pointer; color: var(--navy); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
-.wish-ok { font-size: 0.82rem; font-weight: 700; color: #1f7a4d; }
+.wish-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.wish-ok { font-size: 0.82rem; font-weight: 700; color: #1f7a4d; white-space: nowrap; }
 .wish-acts { display: flex; gap: 6px; flex: none; }
 .mini { height: 30px; padding: 0 10px; font-size: 0.82rem; border: 1px solid var(--line); border-radius: 4px; background: var(--white); cursor: pointer; }
 .mini:hover { border-color: var(--navy); }
@@ -80,7 +98,7 @@ dialog.wish-dlg { width: min(440px, calc(100% - 32px)); }
 .f-set { border: 0; margin: 18px 0 0; padding: 0; }
 .f-input { width: 100%; height: 46px; padding: 0 12px; font: inherit; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 4px; }
 .f-input:focus { border-color: var(--navy); outline: none; box-shadow: 0 0 0 3px rgba(19,48,95,.12); }
-#wish-text, #wish-date { margin-top: 8px; }
+#wish-date { margin-top: 8px; }
 .f-input[hidden] { display: none; }
 .seg { display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
 .seg button { flex: 1; height: 44px; border: 0; background: var(--white); cursor: pointer; font-weight: 500; }
@@ -91,6 +109,8 @@ dialog.wish-dlg { width: min(440px, calc(100% - 32px)); }
 .wtag { height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--white); font-size: 0.9rem; cursor: pointer; }
 .wtag:hover { border-color: var(--navy); }
 .wtag[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--white); font-weight: 700; }
+.wtag-other { border-style: dashed; border-color: #b7bfcc; color: var(--navy); }
+.f-input[hidden], select[hidden] { display: none; }
 
 /* ===== Tools ===== */
 .tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding-top: 36px; }
@@ -232,7 +252,7 @@ dialog::backdrop { background: rgba(15, 37, 71, 0.6); }
 .reviews { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .rv { background: var(--white); padding: 14px 18px; }
 .rv-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
-.rv-face { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--soft); font-size: 1.1rem; }
+.rv-face { width: 32px; height: 32px; }
 .rv-name { font-weight: 700; }
 .rv-date { margin-left: auto; font-size: 0.85rem; color: var(--muted); }
 .rv-none { font-size: 0.85rem; color: var(--muted); }
@@ -244,7 +264,7 @@ dialog::backdrop { background: rgba(15, 37, 71, 0.6); }
 .logout:hover { color: var(--navy); }
 dialog.login { width: min(380px, calc(100% - 32px)); height: fit-content; max-height: none; margin: auto; border-top: 4px solid var(--navy); }
 .login-in { padding: 32px 28px 24px; text-align: center; }
-.login-face { width: 84px; height: 84px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; background: var(--soft); font-size: 2.8rem; }
+.login-face { display: flex; justify-content: center; }
 .login-title { margin: 16px 0 18px; font-size: 1.25rem; font-weight: 900; color: var(--navy); }
 #login-pw { width: 100%; height: 48px; padding: 0 14px; font: inherit; font-size: 1.1rem; text-align: center; letter-spacing: 0.2em; border: 1px solid var(--line); border-radius: 4px; }
 #login-pw:focus { border-color: var(--navy); outline: none; box-shadow: 0 0 0 3px rgba(19,48,95,.12); }
