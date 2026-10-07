@@ -3,7 +3,7 @@
 
   const MEMBER_KEY = "family-recipes:member";
   const RATING_KEY = "family-recipes:ratings";
-  const LEVELS = { 1: "簡單", 2: "要一點耐心", 3: "請大人一起做" };
+  const LEVELS = { 1: "Easy", 2: "Medium", 3: "Hard" };
   const ALL = "全部";
   const NOTE_MAX = 200;
   const WISH_KEY = "family-recipes:wishes";
@@ -280,7 +280,7 @@
   };
   // 每個標籤的代表色（圖示顏色）；卡片底色會自動用它調淡
   const TAG_COLOR = {
-    早餐: "#c27803", 湯品: "#1d6fb8", 豬肉: "#d0465c", 牛肉: "#a2471f", 雞肉: "#d9731a",
+    早餐: "#c27803", 湯品: "#FFFFCE", 豬肉: "#d0465c", 牛肉: "#a2471f", 雞肉: "#d9731a",
     蔬菜: "#2f8a4c", 中式: "#c9352b", 西式: "#6a4bc4", 日式: "#c2416f",
     海鮮: "#0f7f86", 蔬食: "#2f8a4c", 麵食: "#b26b12", 點心: "#b03a8c",
   };
