@@ -75,10 +75,16 @@ img { max-width: 100%; }
 .cal-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 16px 0 14px; padding: 0; font-size: 0.85rem; color: var(--muted); }
 .cal-legend li { display: inline-flex; align-items: center; gap: 6px; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
-.slot-breakfast.dot, .cal-item.slot-breakfast b { background: #e3a008; }
-.slot-lunch.dot, .cal-item.slot-lunch b { background: #2f8a4c; }
-.slot-dinner.dot, .cal-item.slot-dinner b { background: var(--navy); }
-.is-wish.dot, .cal-item.is-wish b { background: #d4508f; }
+/* 早／午／晚：同一個深藍的淺、中、深 */
+:root { --slot-b: #a9bbdb; --slot-l: #5b78ad; --slot-d: var(--navy); }
+.slot-breakfast.dot, .cal-item.slot-breakfast b { background: var(--slot-b); }
+.cal-item.slot-breakfast b { color: var(--navy); }
+.slot-lunch.dot, .cal-item.slot-lunch b { background: var(--slot-l); }
+.slot-dinner.dot, .cal-item.slot-dinner b { background: var(--slot-d); }
+.is-wish.dot { background: #d4508f; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.cal-wish { flex: none; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #d4508f; color: var(--white); font-size: 0.68rem; font-weight: 700; }
+.cal-legend .cal-wish { width: 16px; height: 16px; font-size: 0.6rem; }
 
 .cal-layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
 @media (min-width: 980px) { .cal-layout { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; } }
@@ -103,6 +109,8 @@ img { max-width: 100%; }
   .cal-cell { min-height: 58px; padding: 4px; align-items: center; }
   .cal-items { display: none; }
   .cal-dots { display: flex; justify-content: center; padding: 0; }
+  .cal-head { flex-direction: column; gap: 2px; }
+  .cal-wish { width: 16px; height: 16px; font-size: 0.6rem; }
   .cal-grid { gap: 3px; }
 }
 
@@ -111,9 +119,9 @@ img { max-width: 100%; }
 .cal-today-tag { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--navy); color: var(--white); }
 .cal-slots { display: grid; gap: 10px; }
 .cal-slot, .cal-wishes { background: var(--white); padding: 12px 14px; border-left: 4px solid var(--line); }
-.cal-slot.slot-breakfast { border-left-color: #e3a008; }
-.cal-slot.slot-lunch { border-left-color: #2f8a4c; }
-.cal-slot.slot-dinner { border-left-color: var(--navy); }
+.cal-slot.slot-breakfast { border-left-color: var(--slot-b); }
+.cal-slot.slot-lunch { border-left-color: var(--slot-l); }
+.cal-slot.slot-dinner { border-left-color: var(--slot-d); }
 .cal-wishes { margin-top: 10px; border-left-color: #d4508f; }
 .cal-slot h4, .cal-wishes h4 { margin: 0 0 6px; font-size: 0.95rem; font-weight: 900; }
 .cal-slot ul, .cal-wishes ul { list-style: none; margin: 0; padding: 0; }

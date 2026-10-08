@@ -3,7 +3,7 @@
 
   const MEMBER_KEY = "family-recipes:member";
   const RATING_KEY = "family-recipes:ratings";
-  const LEVELS = { 1: "Easy", 2: "Medium", 3: "Hard" };
+  const LEVELS = { 1: "簡單", 2: "要一點耐心", 3: "請大人一起做" };
   const ALL = "全部";
   const NOTE_MAX = 200;
   const WISH_KEY = "family-recipes:wishes";
@@ -812,16 +812,16 @@
       const ds = ymd(new Date(y, mo, d));
       const { meals, wishes } = dayItems(ds);
       const items = SLOTS.map(([k, label]) => meals.filter((x) => x.slot === k)
-        .map((x) => `<span class="cal-item slot-${k}"><b>${label[0]}</b>${esc(titleOf(x))}</span>`).join("")).join("") +
-        wishes.map((w) => `<span class="cal-item is-wish"><b>願</b>${esc(titleOf({ recipeId: w.recipeId, text: w.text }))}</span>`).join("");
-      const dots = SLOTS.map(([k]) => meals.filter((x) => x.slot === k).map(() => `<i class="dot slot-${k}"></i>`).join("")).join("") +
-        wishes.map(() => `<i class="dot is-wish"></i>`).join("");
-      const n = meals.length + wishes.length;
+        .map((x) => `<span class="cal-item slot-${k}"><b>${label[0]}</b>${esc(titleOf(x))}</span>`).join("")).join("");
+      const dots = SLOTS.map(([k]) => meals.filter((x) => x.slot === k).map(() => `<i class="dot slot-${k}"></i>`).join("")).join("");
+      // 答應的願望：月曆上只放一個「願」標記，內容看右邊明細
+      const wishMark = wishes.length ? `<span class="cal-wish" title="有 ${wishes.length} 個答應的願望">願</span>` : "";
+      const label = [meals.length ? `${meals.length} 道菜` : "", wishes.length ? `${wishes.length} 個答應的願望` : ""].filter(Boolean).join("、");
       cells += `<button type="button" class="cal-cell${ds === today ? " is-today" : ""}${ds === state.calSel ? " is-sel" : ""}"
-        data-day="${ds}" aria-pressed="${ds === state.calSel}" aria-label="${mo + 1} 月 ${d} 日${n ? `，${n} 項` : ""}">
-        <span class="cal-num">${d}</span>
+        data-day="${ds}" aria-pressed="${ds === state.calSel}" aria-label="${mo + 1} 月 ${d} 日${label ? `，${label}` : ""}">
+        <span class="cal-head"><span class="cal-num">${d}</span>${wishMark}</span>
         <span class="cal-items">${items}</span>
-        ${n ? `<span class="cal-dots" aria-hidden="true">${dots}</span>` : ""}
+        ${meals.length ? `<span class="cal-dots" aria-hidden="true">${dots}</span>` : ""}
       </button>`;
     }
     body.innerHTML = `<div class="cal-dow" aria-hidden="true">${[..."日一二三四五六"].map((x) => `<span>${x}</span>`).join("")}</div>
