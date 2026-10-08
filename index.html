@@ -13,7 +13,13 @@
 <body>
   <nav class="nav">
     <div class="wrap nav-in">
-      <a class="brand" href="./">我們家的食譜</a>
+      <div class="nav-left">
+        <a class="brand" href="./">我們家的食譜</a>
+        <div class="views" role="group" aria-label="切換頁面">
+          <a class="view-tab" href="./" data-view="home" aria-current="page">食譜</a>
+          <a class="view-tab" href="#calendar" data-view="cal">月曆</a>
+        </div>
+      </div>
       <div class="who" role="group" aria-label="現在是誰在看">
         <span class="who-label">我是</span>
         <div class="who-list" id="who-list"></div>
@@ -21,6 +27,7 @@
     </div>
   </nav>
 
+  <div id="view-home">
   <header class="hero">
     <div class="wrap">
       <h1 class="hero-title">今晚想吃什麼？</h1>
@@ -43,7 +50,10 @@
 
   <main class="wrap">
     <div class="tools">
-      <h2 class="tools-h">找食譜</h2>
+      <div class="tools-left">
+        <h2 class="tools-h">找食譜</h2>
+        <button type="button" class="mini new-recipe" id="new-recipe" hidden>＋ 新增食譜</button>
+      </div>
       <label class="search">
         <span class="sr">搜尋食譜</span>
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
@@ -51,10 +61,38 @@
       </label>
     </div>
     <div class="filters" id="chips" aria-label="分類篩選"></div>
+    <div class="admin-bar" id="admin-bar" hidden></div>
     <p class="count" id="count"></p>
     <div class="grid" id="grid"></div>
     <p class="empty" id="empty" hidden>找不到這道菜。換個關鍵字試試，或請大人把它加進食譜裡。</p>
   </main>
+  </div>
+
+  <section id="view-cal" class="cal-view" hidden aria-labelledby="cal-title">
+    <div class="wrap">
+      <div class="cal-top">
+        <div>
+          <p class="cal-kicker">家裡的月曆</p>
+          <h1 class="cal-title" id="cal-title"></h1>
+        </div>
+        <div class="cal-nav">
+          <button type="button" class="mini cal-navbtn" id="cal-prev" aria-label="上個月">‹</button>
+          <button type="button" class="mini" id="cal-today">今天</button>
+          <button type="button" class="mini cal-navbtn" id="cal-next" aria-label="下個月">›</button>
+        </div>
+      </div>
+      <ul class="cal-legend" aria-label="圖例">
+        <li><i class="dot slot-breakfast"></i>早餐</li>
+        <li><i class="dot slot-lunch"></i>午餐</li>
+        <li><i class="dot slot-dinner"></i>晚餐</li>
+        <li><i class="dot is-wish"></i>答應的願望</li>
+      </ul>
+      <div class="cal-layout">
+        <div class="cal-body" id="cal-body"></div>
+        <aside class="cal-day" id="cal-day" aria-live="polite"></aside>
+      </div>
+    </div>
+  </section>
 
   <footer class="foot"><div class="wrap" id="sync"></div></footer>
 
@@ -100,6 +138,63 @@
       </div>
     </form>
   </dialog>
+  <dialog id="meal" class="login wish-dlg" aria-labelledby="meal-title">
+    <form id="meal-form" class="wish-in" novalidate>
+      <h2 class="login-title" id="meal-title">要煮什麼？</h2>
+      <div class="wtags" id="meal-tags" role="group" aria-label="先選分類，縮小菜單"></div>
+      <label class="sr" for="meal-dish">選一道菜</label>
+      <select id="meal-dish" class="f-input"></select>
+      <label class="sr" for="meal-text">自己寫菜名</label>
+      <input id="meal-text" class="f-input" type="text" maxlength="40" placeholder="寫下菜名，例如：外帶便當" hidden>
+      <button type="button" class="fclear meal-new" id="meal-newrecipe">＋ 菜單裡沒有？建立新食譜</button>
+      <p class="login-err" id="meal-err" role="alert"></p>
+      <div class="login-btns">
+        <button type="button" class="btn-ghost" id="meal-cancel">取消</button>
+        <button type="submit" class="btn" id="meal-go">加入</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="redit" class="login redit-dlg" aria-labelledby="redit-title">
+    <form id="redit-form" class="wish-in" novalidate>
+      <h2 class="login-title" id="redit-title">新增食譜</h2>
+      <label class="f-label" for="re-title">菜名</label>
+      <input id="re-title" class="f-input" type="text" maxlength="40" required placeholder="例如：馬鈴薯燉肉">
+      <label class="f-label" for="re-sub">一句話介紹（可以不寫）</label>
+      <input id="re-sub" class="f-input" type="text" maxlength="80" placeholder="例如：鬆軟馬鈴薯配甜甜的醬汁">
+      <span class="f-label">分類標籤</span>
+      <div class="wtags" id="re-tags" role="group" aria-label="分類標籤，可以選好幾個"></div>
+      <div class="re-row">
+        <label class="f-label">時間（分鐘）<input id="re-time" class="f-input" type="number" min="1" max="600" inputmode="numeric"></label>
+        <label class="f-label">份量（人）<input id="re-serves" class="f-input" type="number" min="1" max="30" inputmode="numeric"></label>
+      </div>
+      <span class="f-label">難度</span>
+      <div class="seg" id="re-level" role="group" aria-label="難度">
+        <button type="button" data-level="1">簡單</button>
+        <button type="button" data-level="2">要一點耐心</button>
+        <button type="button" data-level="3">請大人一起做</button>
+      </div>
+      <label class="f-label" for="re-icon">圖示</label>
+      <div class="re-icon-row">
+        <span class="re-icon-prev" id="re-icon-prev" aria-hidden="true"></span>
+        <select id="re-icon" class="f-input"></select>
+      </div>
+      <label class="f-label" for="re-ing">材料（一行一項）</label>
+      <textarea id="re-ing" class="f-area" rows="5" placeholder="馬鈴薯 2 顆&#10;豬肉片 200 克&#10;醬油 2 大匙"></textarea>
+      <label class="f-label" for="re-steps">步驟（一行一步）</label>
+      <textarea id="re-steps" class="f-area" rows="6" placeholder="馬鈴薯削皮切塊。&#10;請大人熱鍋，把肉片炒到變色。"></textarea>
+      <label class="f-label" for="re-from">誰的拿手菜（可以不寫）</label>
+      <input id="re-from" class="f-input" type="text" maxlength="20" placeholder="例如：阿嬤">
+      <label class="f-label" for="re-tip">小撇步（可以不寫）</label>
+      <input id="re-tip" class="f-input" type="text" maxlength="200">
+      <p class="login-err" id="re-err" role="alert"></p>
+      <div class="login-btns">
+        <button type="button" class="btn-ghost" id="re-cancel">取消</button>
+        <button type="submit" class="btn" id="re-go">儲存食譜</button>
+      </div>
+    </form>
+  </dialog>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="icons.js"></script>

@@ -57,6 +57,100 @@ img { max-width: 100%; }
 .d-media .ph .ph-ic { width: 26%; max-width: 150px; }
 .wd-ic { display: inline-block; width: 1.05em; height: 1.05em; margin-right: 6px; vertical-align: -0.12em; }
 
+/* ===== 分頁 ===== */
+.nav-left { display: flex; align-items: center; gap: 8px 24px; flex-wrap: wrap; }
+.views { display: flex; gap: 4px; }
+.view-tab { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 999px; color: var(--muted); font-weight: 700; text-decoration: none; }
+.view-tab:hover { color: var(--navy); background: var(--soft); }
+.view-tab[aria-current="page"] { color: var(--navy); background: #e7ecf5; }
+
+/* ===== 月曆 ===== */
+.cal-view { padding: 36px 0 72px; }
+.cal-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.cal-kicker { margin: 0; font-size: 0.9rem; font-weight: 700; color: var(--muted); }
+.cal-title { margin: 2px 0 0; font-size: clamp(1.8rem, 4.5vw, 2.6rem); font-weight: 900; color: var(--navy); line-height: 1.2; }
+.cal-nav { display: flex; gap: 6px; }
+.cal-nav .mini { height: 38px; padding: 0 14px; font-size: 0.95rem; }
+.cal-navbtn { font-size: 1.3rem !important; line-height: 1; }
+.cal-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 16px 0 14px; padding: 0; font-size: 0.85rem; color: var(--muted); }
+.cal-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.slot-breakfast.dot, .cal-item.slot-breakfast b { background: #e3a008; }
+.slot-lunch.dot, .cal-item.slot-lunch b { background: #2f8a4c; }
+.slot-dinner.dot, .cal-item.slot-dinner b { background: var(--navy); }
+.is-wish.dot, .cal-item.is-wish b { background: #d4508f; }
+
+.cal-layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 980px) { .cal-layout { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; } }
+.cal-dow, .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal-dow span { padding: 6px 0; text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+.cal-grid { gap: 4px; }
+.cal-cell {
+  position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 3px;
+  min-height: 104px; padding: 6px; text-align: left;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--white); cursor: pointer; overflow: hidden;
+}
+.cal-cell.is-pad { border: 0; background: transparent; cursor: default; }
+.cal-cell:hover { border-color: #b7bfcc; }
+.cal-cell.is-sel { border-color: var(--navy); box-shadow: inset 0 0 0 1px var(--navy); }
+.cal-num { font-size: 0.85rem; font-weight: 700; color: var(--ink); width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; }
+.cal-cell.is-today .cal-num { background: var(--navy); color: var(--white); }
+.cal-items { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cal-item { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cal-item b { flex: none; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 3px; color: var(--white); font-size: 0.65rem; font-weight: 700; }
+.cal-dots { display: none; flex-wrap: wrap; gap: 3px; padding-left: 4px; }
+@media (max-width: 700px) {
+  .cal-cell { min-height: 58px; padding: 4px; align-items: center; }
+  .cal-items { display: none; }
+  .cal-dots { display: flex; justify-content: center; padding: 0; }
+  .cal-grid { gap: 3px; }
+}
+
+.cal-day { background: var(--soft); padding: 20px 20px 24px; }
+.cal-day-h { margin: 0 0 14px; font-size: 1.25rem; font-weight: 900; color: var(--navy); display: flex; align-items: center; gap: 10px; }
+.cal-today-tag { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--navy); color: var(--white); }
+.cal-slots { display: grid; gap: 10px; }
+.cal-slot, .cal-wishes { background: var(--white); padding: 12px 14px; border-left: 4px solid var(--line); }
+.cal-slot.slot-breakfast { border-left-color: #e3a008; }
+.cal-slot.slot-lunch { border-left-color: #2f8a4c; }
+.cal-slot.slot-dinner { border-left-color: var(--navy); }
+.cal-wishes { margin-top: 10px; border-left-color: #d4508f; }
+.cal-slot h4, .cal-wishes h4 { margin: 0 0 6px; font-size: 0.95rem; font-weight: 900; }
+.cal-slot ul, .cal-wishes ul { list-style: none; margin: 0; padding: 0; }
+.cal-slot li, .cal-wishes li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+.cal-wishes li { justify-content: flex-start; }
+.cal-slot li:first-child, .cal-wishes li:first-child { border-top: 0; }
+.cal-dish { font-weight: 700; overflow-wrap: anywhere; }
+button.cal-dish { padding: 0; border: 0; background: none; text-align: left; cursor: pointer; color: var(--navy); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.cal-wish-who { font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+.cal-none { margin: 0; font-size: 0.9rem; color: var(--muted); }
+.cal-add { margin-top: 8px; padding: 0; border: 0; background: none; color: var(--navy); font-weight: 700; cursor: pointer; }
+.cal-add:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ===== 新增料理／食譜表單 ===== */
+.meal-new { display: block; margin-top: 12px; }
+.meal-new[hidden] { display: none; }
+dialog.login.redit-dlg { width: min(560px, calc(100% - 24px)); max-height: calc(100% - 24px); overflow-y: auto; }
+.redit-dlg .f-label { margin-top: 16px; }
+.redit-dlg .login-title + .f-label { margin-top: 0; }
+.re-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.re-row .f-input { margin-top: 6px; font-weight: 400; }
+.re-icon-row { display: flex; align-items: center; gap: 10px; }
+.re-icon-prev { flex: none; width: 46px; height: 46px; border-radius: 6px; display: grid; place-items: center; }
+.re-icon-prev .lc { width: 26px; height: 26px; }
+.f-area { width: 100%; padding: 10px 12px; font: inherit; line-height: 1.6; color: var(--ink); border: 1px solid var(--line); border-radius: 4px; resize: vertical; }
+.f-area:focus { border-color: var(--navy); outline: none; box-shadow: 0 0 0 3px rgba(19,48,95,.12); }
+.re-acts { display: flex; gap: 6px; margin-top: 10px; }
+.seg button { padding: 0 6px; }
+
+/* ===== 食譜資料維護 ===== */
+.tools-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.new-recipe { height: 34px; padding: 0 14px; font-size: 0.9rem; font-weight: 700; color: var(--navy); }
+.admin-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-top: 18px; padding: 14px 18px; background: #fff6d9; border-left: 4px solid #e3a008; }
+.admin-bar[hidden] { display: none; }
+.admin-bar p { margin: 0; max-width: 46em; }
+.admin-bar .btn { height: 40px; padding: 0 18px; border-radius: 4px; cursor: pointer; font-weight: 700; }
+
 /* ===== Hero ===== */
 .hero { padding: 56px 0 32px; }
 .hero-title { margin: 0; font-weight: 900; font-size: clamp(2.2rem, 5.5vw, 3.6rem); line-height: 1.15; color: var(--navy); letter-spacing: 0.02em; }
