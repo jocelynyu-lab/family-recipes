@@ -3,7 +3,7 @@
 
   const MEMBER_KEY = "family-recipes:member";
   const RATING_KEY = "family-recipes:ratings";
-  const LEVELS = { 1: "簡單", 2: "要一點耐心", 3: "請大人一起做" };
+  const LEVELS = { 1: "Easy", 2: "Medium", 3: "Hard" };
   const ALL = "全部";
   const NOTE_MAX = 200;
   const WISH_KEY = "family-recipes:wishes";
