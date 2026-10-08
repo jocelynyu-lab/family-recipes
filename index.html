@@ -18,6 +18,7 @@
         <div class="views" role="group" aria-label="切換頁面">
           <a class="view-tab" href="./" data-view="home" aria-current="page">食譜</a>
           <a class="view-tab" href="#calendar" data-view="cal">月曆</a>
+          <a class="view-tab" href="#ranking" data-view="rank">排名</a>
         </div>
       </div>
       <div class="who" role="group" aria-label="現在是誰在看">
@@ -94,6 +95,20 @@
     </div>
   </section>
 
+  <section id="view-rank" class="rank-view" hidden aria-labelledby="rank-title">
+    <div class="wrap">
+      <div class="cal-top">
+        <div>
+          <p class="cal-kicker">全家的口味分析</p>
+          <h1 class="cal-title" id="rank-title">排名</h1>
+        </div>
+        <div class="seg rank-period" id="rank-period" role="group" aria-label="統計期間"></div>
+      </div>
+      <dl class="rank-kpi" id="rank-kpi"></dl>
+      <div class="rank-grid" id="rank-grid"></div>
+    </div>
+  </section>
+
   <footer class="foot"><div class="wrap" id="sync"></div></footer>
 
   <dialog id="detail" aria-labelledby="d-title">
@@ -160,6 +175,9 @@
       <h2 class="login-title" id="redit-title">新增食譜</h2>
       <label class="f-label" for="re-title">菜名</label>
       <input id="re-title" class="f-input" type="text" maxlength="40" required placeholder="例如：馬鈴薯燉肉">
+      <label class="f-label" for="re-id">英文名稱（ID）</label>
+      <input id="re-id" class="f-input" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="latin" placeholder="例如：nikujaga" aria-describedby="re-id-hint">
+      <p class="f-hint" id="re-id-hint"></p>
       <label class="f-label" for="re-sub">一句話介紹（可以不寫）</label>
       <input id="re-sub" class="f-input" type="text" maxlength="80" placeholder="例如：鬆軟馬鈴薯配甜甜的醬汁">
       <span class="f-label">分類標籤</span>

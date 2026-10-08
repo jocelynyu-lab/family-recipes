@@ -744,6 +744,7 @@
     renderGrid();
     renderWishes();
     renderCalendar();
+    renderRanking();
     if (state.openId) renderDetail();
   }
 
@@ -759,16 +760,20 @@
   }
 
   // ---------- views（食譜／月曆分頁） ----------
+  const VIEWS = { home: "", cal: "#calendar", rank: "#ranking" };
+  const viewHash = () => VIEWS[state.view] || location.pathname + location.search;
   function setView(v) {
-    state.view = v === "cal" ? "cal" : "home";
+    state.view = v in VIEWS ? v : "home";
     $("#view-home").hidden = state.view !== "home";
     $("#view-cal").hidden = state.view !== "cal";
+    $("#view-rank").hidden = state.view !== "rank";
     document.querySelectorAll("[data-view]").forEach((b) => {
       if (b.dataset.view === state.view) b.setAttribute("aria-current", "page");
       else b.removeAttribute("aria-current");
     });
-    if (!state.openId) history.replaceState(null, "", state.view === "cal" ? "#calendar" : location.pathname + location.search);
+    if (!state.openId) history.replaceState(null, "", viewHash());
     if (state.view === "cal") renderCalendar();
+    if (state.view === "rank") renderRanking();
     window.scrollTo(0, 0);
   }
 
@@ -908,6 +913,13 @@
     state.reLevel = r ? r.level || 1 : 1;
     $("#redit-title").textContent = r ? "編輯食譜" : "新增食譜";
     $("#re-title").value = r ? r.title : "";
+    // 英文名稱就是食譜的 id：新增時填，建立後不能改（評分、願望、月曆都靠它連結）
+    const idBox = $("#re-id");
+    idBox.value = r ? r.id : "";
+    idBox.disabled = !!r;
+    $("#re-id-hint").textContent = r
+      ? "建立後就不能改，評分、願望和月曆都靠它連結。"
+      : "只能用小寫英文、數字和連字號，例如 nikujaga、potato-pork-stew。網址也會用到它。";
     $("#re-sub").value = r ? r.subtitle || "" : "";
     $("#re-time").value = r ? r.time || 30 : 30;
     $("#re-serves").value = r ? r.serves || 3 : 3;
@@ -943,6 +955,135 @@
     $("#re-icon-prev").style.background = tint(colorOf(r), 0.12);
   }
   const lines = (v) => v.split("\n").map((x) => x.trim()).filter(Boolean);
+  // 英文名稱 → id：轉小寫，空白和底線變連字號，去掉其他符號
+  const ID_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+  const slugify = (v) => String(v || "").toLowerCase().trim()
+    .replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
+
+  // ---------- 排名 ----------
+  const PERIODS = [["month", "本月"], ["3m", "近 3 個月"], ["year", "今年"], ["all", "全部"]];
+  function periodStart(p) {
+    const t = new Date();
+    if (p === "month") return ymd(new Date(t.getFullYear(), t.getMonth(), 1));
+    if (p === "3m") return ymd(new Date(t.getFullYear(), t.getMonth() - 2, 1));
+    if (p === "year") return `${t.getFullYear()}-01-01`;
+    return "";
+  }
+  // 依「食譜 id，沒有的話用菜名」分組計數
+  function groupBy(list, fn) {
+    const map = new Map();
+    list.forEach((x) => {
+      const key = x.recipeId ? "r:" + x.recipeId : "t:" + (x.text || "").trim();
+      if (key === "t:") return;
+      if (!map.has(key)) map.set(key, { key, recipeId: x.recipeId || "", text: x.text || "", items: [] });
+      map.get(key).items.push(x);
+    });
+    return [...map.values()].map(fn);
+  }
+  function rankList(rows, valueOf, max, empty, same) {
+    if (!rows.length) return `<p class="rk-empty">${empty}</p>`;
+    // 同分同名次（例如 1、1、3）
+    const ranks = [];
+    rows.forEach((row, i) => { ranks[i] = i > 0 && same(rows[i - 1], row) ? ranks[i - 1] : i + 1; });
+    return `<ol class="rk-list">${rows.map((row, i) => {
+      const no = ranks[i];
+      const r = findRecipe(row.recipeId);
+      const name = r ? r.title : row.text;
+      const color = r ? colorOf(r) : "#697284";
+      const ic = r ? recipeGlyph(r) : svgIcon("utensils");
+      const pct = max ? Math.max(4, Math.round((row.bar / max) * 100)) : 0;
+      return `<li class="rk-row${no <= 3 ? " rk-top rk-top" + no : ""}">
+        <span class="rk-no">${no}</span>
+        <span class="rk-ic" style="color:${color};background:${tint(color, 0.12)}" aria-hidden="true">${ic}</span>
+        <span class="rk-main">
+          ${r ? `<button type="button" class="rk-name is-link" data-open="${esc(r.id)}">${esc(name)}</button>` : `<span class="rk-name">${esc(name)}</span>`}
+          <span class="rk-bar" aria-hidden="true"><i style="width:${pct}%;background:${color}"></i></span>
+          ${row.extra || ""}
+        </span>
+        <span class="rk-val">${valueOf(row)}</span>
+      </li>`;
+    }).join("")}</ol>`;
+  }
+  function whoHTML(items) {
+    const ids = [...new Set(items.map((x) => x.member))];
+    return `<span class="rk-who">${ids.map((id) => {
+      const m = FAMILY.find((x) => x.id === id);
+      return m ? avatar(m, "av-xs") : "";
+    }).join("")}</span>`;
+  }
+
+  function renderRanking() {
+    const box = $("#rank-grid");
+    if (!box) return;
+    if (!state.rankPeriod) state.rankPeriod = "all";
+    $("#rank-period").innerHTML = PERIODS.map(([k, label]) =>
+      `<button type="button" data-period="${k}" aria-pressed="${k === state.rankPeriod}">${label}</button>`).join("");
+    if (needsLogin() && !state.member) {
+      $("#rank-kpi").innerHTML = "";
+      box.innerHTML = `<p class="wish-empty">登入後就能看到全家的排名。</p>`;
+      return;
+    }
+    const start = periodStart(state.rankPeriod);
+    const inRange = (d) => !start || (d && d >= start);
+
+    // 評分：每道菜的平均星星
+    const allReviews = [];
+    const rating = allRecipes().map((r) => {
+      const list = reviewsOf(r.id).filter((v) => inRange(v.date));
+      allReviews.push(...list);
+      return list.length ? { recipeId: r.id, text: r.title, avg: avgOf(list), n: list.length, bar: avgOf(list) } : null;
+    }).filter(Boolean).sort((a, b) => b.avg - a.avg || b.n - a.n).slice(0, 10);
+
+    // 上桌：月曆出現次數
+    const meals = state.meals.filter((m) => inRange(m.date));
+    const served = groupBy(meals, (g) => ({ ...g, n: g.items.length, bar: g.items.length }))
+      .sort((a, b) => b.n - a.n).slice(0, 10);
+
+    // 許願：被許願的次數
+    const wishes = state.wishes.filter((w) => inRange(w.date));
+    const wished = groupBy(wishes, (g) => ({ ...g, n: g.items.length, bar: g.items.length, extra: whoHTML(g.items) }))
+      .sort((a, b) => b.n - a.n).slice(0, 10);
+
+    // 答應：爸媽答應的次數與答應率
+    const granted = groupBy(wishes, (g) => {
+      const ok = g.items.filter((w) => w.granted);
+      return { ...g, n: ok.length, total: g.items.length, bar: ok.length, extra: ok.length ? whoHTML(ok) : "" };
+    }).filter((g) => g.n > 0).sort((a, b) => b.n - a.n || b.n / b.total - a.n / a.total).slice(0, 10);
+
+    const okCount = wishes.filter((w) => w.granted).length;
+    const allAvg = allReviews.length ? avgOf(allReviews).toFixed(1) : "–";
+    $("#rank-kpi").innerHTML = [
+      ["評分", `${allReviews.length}`, `次・平均 ★ ${allAvg}`],
+      ["上桌", `${meals.length}`, "道菜"],
+      ["許願", `${wishes.length}`, "個願望"],
+      ["答應率", wishes.length ? `${Math.round((okCount / wishes.length) * 100)}%` : "–", `${okCount} / ${wishes.length}`],
+    ].map(([k, v, u]) => `<div class="kpi"><dt>${k}</dt><dd><strong>${v}</strong><span>${u}</span></dd></div>`).join("");
+
+    const max = (rows) => rows.reduce((m, r) => Math.max(m, r.bar), 0);
+    box.innerHTML = `
+      <section class="rk-card">
+        <h3>評分最高</h3>
+        <p class="rk-sub">平均星星，同分時評分次數多的排前面</p>
+        ${rankList(rating, (r) => `<span class="st">★</span> ${r.avg.toFixed(1)}<small>${r.n} 次</small>`, 5, "這段期間還沒有人評分。",
+          (a, b) => a.avg.toFixed(1) === b.avg.toFixed(1) && a.n === b.n)}
+      </section>
+      <section class="rk-card">
+        <h3>最常上桌</h3>
+        <p class="rk-sub">月曆上出現的次數</p>
+        ${rankList(served, (r) => `${r.n}<small>次</small>`, max(served), "這段期間月曆上還沒有排菜。", (a, b) => a.n === b.n)}
+      </section>
+      <section class="rk-card">
+        <h3>最多人許願</h3>
+        <p class="rk-sub">被許願的次數，旁邊是許過願的人</p>
+        ${rankList(wished, (r) => `${r.n}<small>次</small>`, max(wished), "這段期間還沒有人許願。", (a, b) => a.n === b.n)}
+      </section>
+      <section class="rk-card">
+        <h3>爸媽答應最多</h3>
+        <p class="rk-sub">答應的次數和答應率</p>
+        ${rankList(granted, (r) => `${r.n}<small>${Math.round((r.n / r.total) * 100)}%</small>`, max(granted), "這段期間還沒有答應的願望。",
+          (a, b) => a.n === b.n && a.n * b.total === b.n * a.total)}
+      </section>`;
+  }
 
   // ---------- login ----------
   function openLogin(id) {
@@ -1099,6 +1240,18 @@
       state.calSel = sameMonth ? ymd(t) : ymd(state.calMonth);
       renderCalendar();
     };
+    on("#rank-period", "click", (e) => {
+      const b = e.target.closest("[data-period]");
+      if (!b) return;
+      state.rankPeriod = b.dataset.period;
+      renderRanking();
+      const again = $(`#rank-period [data-period="${state.rankPeriod}"]`);
+      if (again) again.focus();
+    });
+    on("#rank-grid", "click", (e) => {
+      const b = e.target.closest("[data-open]");
+      if (b) openRecipe(b.dataset.open);
+    });
     on("#cal-prev", "click", () => shiftMonth(-1));
     on("#cal-next", "click", () => shiftMonth(1));
     on("#cal-today", "click", () => shiftMonth(0));
@@ -1208,6 +1361,11 @@
       renderReLevel();
     });
     on("#re-icon", "change", renderReIcon);
+    on("#re-id", "input", (e) => {
+      const el = e.target;
+      const v = el.value.toLowerCase().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "");
+      if (v !== el.value) el.value = v;
+    });
     const backToMeal = () => { if (state.reReturn) { openMeal(state.mealSlot); } };
     on("#re-cancel", "click", () => { $("#redit").close(); backToMeal(); });
     on("#redit-form", "submit", async (e) => {
@@ -1215,6 +1373,18 @@
       const err = $("#re-err");
       const title = $("#re-title").value.trim().slice(0, 40);
       if (!title) { err.textContent = "請填菜名。"; $("#re-title").focus(); return; }
+      let newId = "";
+      if (!state.reEditId) {
+        newId = slugify($("#re-id").value);
+        $("#re-id").value = newId;
+        if (!newId) { err.textContent = "請填英文名稱。"; $("#re-id").focus(); return; }
+        if (!ID_RE.test(newId) || newId.length < 2 || newId.length > 40) {
+          err.textContent = "英文名稱只能用小寫英文、數字和連字號，2～40 個字。"; $("#re-id").focus(); return;
+        }
+        if (allRecipes().some((x) => x.id === newId) || ["calendar", "ranking"].includes(newId)) {
+          err.textContent = `「${newId}」已經有人用了，換一個名字。`; $("#re-id").focus(); return;
+        }
+      }
       const me = FAMILY.find((m) => m.id === state.member);
       const num = (sel, lo, hi, def) => { const n = parseInt($(sel).value, 10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; };
       const data = {
@@ -1235,7 +1405,7 @@
       const old = state.reEditId && allRecipes().find((x) => x.id === state.reEditId);
       if (old && old.image) data.image = String(old.image).slice(0, 200);
       if (old && old.color) data.color = String(old.color).slice(0, 20);
-      const id = state.reEditId || "c" + Date.now().toString(36);
+      const id = state.reEditId || newId;
       const btn = $("#re-go");
       btn.disabled = true;
       try {
@@ -1388,7 +1558,7 @@
     dlg.addEventListener("close", () => {
       const id = state.openId;
       state.openId = null;
-      history.replaceState(null, "", state.view === "cal" ? "#calendar" : location.pathname + location.search);
+      history.replaceState(null, "", viewHash());
       const card = id && document.querySelector(`[data-open="${CSS.escape(id)}"]`);
       if (card) card.focus();
     });
@@ -1418,10 +1588,12 @@
       state.wishes = list || [];
       renderWishes();
       renderCalendar();
+      renderRanking();
     });
     state.store.subscribeMeals((list) => {
       state.meals = list || [];
       renderCalendar();
+      renderRanking();
     });
     state.store.subscribeCustom((list) => {
       state.custom = (list || []).map((x) => Object.assign({}, x, { custom: true }));
@@ -1448,6 +1620,7 @@
 
     const fromHash = decodeURIComponent(location.hash.slice(1));
     if (fromHash === "calendar") setView("cal");
+    else if (fromHash === "ranking") setView("rank");
     else if (fromHash) openRecipe(fromHash);
   }
 
