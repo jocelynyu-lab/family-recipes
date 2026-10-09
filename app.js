@@ -961,6 +961,8 @@
     .replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
 
   // ---------- 排名 ----------
+  // 每個排行榜一個顏色
+  const BAR = { rating: "#e3a008", served: "#13305f", wished: "#d4508f", granted: "#2f8a4c", active: "#5b78ad" };
   const PERIODS = [["month", "本月"], ["3m", "近 3 個月"], ["year", "今年"], ["all", "全部"]];
   function periodStart(p) {
     const t = new Date();
@@ -980,7 +982,7 @@
     });
     return [...map.values()].map(fn);
   }
-  function rankList(rows, valueOf, max, empty, same) {
+  function rankList(rows, valueOf, max, empty, same, barColor) {
     if (!rows.length) return `<p class="rk-empty">${empty}</p>`;
     // 同分同名次（例如 1、1、3）
     const ranks = [];
@@ -997,7 +999,7 @@
         <span class="rk-ic" style="color:${color};background:${tint(color, 0.12)}" aria-hidden="true">${ic}</span>
         <span class="rk-main">
           ${r ? `<button type="button" class="rk-name is-link" data-open="${esc(r.id)}">${esc(name)}</button>` : `<span class="rk-name">${esc(name)}</span>`}
-          <span class="rk-bar" aria-hidden="true"><i style="width:${pct}%;background:${color}"></i></span>
+          <span class="rk-bar" aria-hidden="true"><i style="width:${pct}%;background:${barColor}"></i></span>
           ${row.extra || ""}
         </span>
         <span class="rk-val">${valueOf(row)}</span>
@@ -1060,28 +1062,56 @@
     ].map(([k, v, u]) => `<div class="kpi"><dt>${k}</dt><dd><strong>${v}</strong><span>${u}</span></dd></div>`).join("");
 
     const max = (rows) => rows.reduce((m, r) => Math.max(m, r.bar), 0);
+
+    // 誰最活躍：每個人的評分次數＋許願次數
+    const active = FAMILY.map((m) => {
+      const rv = allReviews.filter((v) => v.member === m.id).length;
+      const ws = wishes.filter((w) => w.member === m.id).length;
+      return { m, rv, ws, n: rv + ws };
+    }).filter((x) => x.n > 0).sort((a, b) => b.n - a.n || b.rv - a.rv);
+    const amax = active.reduce((m, x) => Math.max(m, x.n), 0);
+    const aranks = [];
+    active.forEach((x, i) => { aranks[i] = i > 0 && active[i - 1].n === x.n && active[i - 1].rv === x.rv ? aranks[i - 1] : i + 1; });
+    const activeHTML = !active.length ? `<p class="rk-empty">這段期間還沒有人評分或許願。</p>` : `<ol class="rk-list">${active.map((x, i) => {
+      const no = aranks[i];
+      return `<li class="rk-row${no <= 3 ? " rk-top rk-top" + no : ""}">
+        <span class="rk-no">${no}</span>
+        ${avatar(x.m, "rk-av")}
+        <span class="rk-main">
+          <span class="rk-name">${esc(x.m.name)}</span>
+          <span class="rk-bar" aria-hidden="true"><i style="width:${Math.max(4, Math.round((x.n / amax) * 100))}%;background:${BAR.active}"></i></span>
+          <span class="rk-split">評分 ${x.rv} 次・許願 ${x.ws} 次</span>
+        </span>
+        <span class="rk-val">${x.n}<small>次</small></span>
+      </li>`;
+    }).join("")}</ol>`;
     box.innerHTML = `
       <section class="rk-card">
         <h3>評分最高</h3>
         <p class="rk-sub">平均星星，同分時評分次數多的排前面</p>
         ${rankList(rating, (r) => `<span class="st">★</span> ${r.avg.toFixed(1)}<small>${r.n} 次</small>`, 5, "這段期間還沒有人評分。",
-          (a, b) => a.avg.toFixed(1) === b.avg.toFixed(1) && a.n === b.n)}
+          (a, b) => a.avg.toFixed(1) === b.avg.toFixed(1) && a.n === b.n, BAR.rating)}
       </section>
       <section class="rk-card">
         <h3>最常上桌</h3>
         <p class="rk-sub">月曆上出現的次數</p>
-        ${rankList(served, (r) => `${r.n}<small>次</small>`, max(served), "這段期間月曆上還沒有排菜。", (a, b) => a.n === b.n)}
+        ${rankList(served, (r) => `${r.n}<small>次</small>`, max(served), "這段期間月曆上還沒有排菜。", (a, b) => a.n === b.n, BAR.served)}
       </section>
       <section class="rk-card">
         <h3>最多人許願</h3>
         <p class="rk-sub">被許願的次數，旁邊是許過願的人</p>
-        ${rankList(wished, (r) => `${r.n}<small>次</small>`, max(wished), "這段期間還沒有人許願。", (a, b) => a.n === b.n)}
+        ${rankList(wished, (r) => `${r.n}<small>次</small>`, max(wished), "這段期間還沒有人許願。", (a, b) => a.n === b.n, BAR.wished)}
       </section>
       <section class="rk-card">
         <h3>爸媽答應最多</h3>
         <p class="rk-sub">答應的次數和答應率</p>
         ${rankList(granted, (r) => `${r.n}<small>${Math.round((r.n / r.total) * 100)}%</small>`, max(granted), "這段期間還沒有答應的願望。",
-          (a, b) => a.n === b.n && a.n * b.total === b.n * a.total)}
+          (a, b) => a.n === b.n && a.n * b.total === b.n * a.total, BAR.granted)}
+      </section>
+      <section class="rk-card rk-wide">
+        <h3>誰最活躍</h3>
+        <p class="rk-sub">評分次數加上許願次數</p>
+        ${activeHTML}
       </section>`;
   }
 

@@ -192,7 +192,10 @@ dialog.login.redit-dlg { width: min(560px, calc(100% - 24px)); max-height: calc(
 button.rk-name { padding: 0; border: 0; background: none; cursor: pointer; color: var(--ink); max-width: 100%; }
 button.rk-name:hover { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
 .rk-bar { display: block; height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; }
-.rk-bar i { display: block; height: 100%; border-radius: 3px; opacity: 0.75; }
+.rk-bar i { display: block; height: 100%; border-radius: 3px; }
+.rk-wide { grid-column: 1 / -1; }
+.rk-av { width: 34px; height: 34px; }
+.rk-split { font-size: 0.8rem; color: var(--muted); }
 .rk-who { display: flex; gap: 3px; }
 .rk-val { flex: none; min-width: 64px; text-align: right; font-weight: 900; font-size: 1.05rem; color: var(--ink); }
 .rk-val small { display: block; font-size: 0.75rem; font-weight: 400; color: var(--muted); }
