@@ -1019,7 +1019,8 @@
 
   // ---------- 排名 ----------
   // 每個排行榜一個顏色
-  const BAR = { rating: "#e3a008", served: "#13305f", wished: "#d4508f", granted: "#2f8a4c", active: "#5b78ad" };
+  // 每個排行榜一個顏色（淡一點，不搶食譜圖示的顏色）
+  const BAR = { rating: "#ecd391", served: "#a9b7d1", wished: "#ebb4cc", granted: "#a9d3b8" };
   const PERIODS = [["month", "本月"], ["3m", "近 3 個月"], ["year", "今年"], ["all", "全部"]];
   function periodStart(p) {
     const t = new Date();
@@ -1051,7 +1052,7 @@
       const color = r ? colorOf(r) : "#697284";
       const ic = r ? recipeGlyph(r) : svgIcon("utensils");
       const pct = max ? Math.max(4, Math.round((row.bar / max) * 100)) : 0;
-      return `<li class="rk-row${no <= 3 ? " rk-top rk-top" + no : ""}">
+      return `<li class="rk-row${no === 1 ? " rk-first" : ""}">
         <span class="rk-no">${no}</span>
         <span class="rk-ic" style="color:${color};background:${tint(color, 0.12)}" aria-hidden="true">${ic}</span>
         <span class="rk-main">
@@ -1120,28 +1121,25 @@
 
     const max = (rows) => rows.reduce((m, r) => Math.max(m, r.bar), 0);
 
-    // 誰最活躍：每個人的評分次數＋許願次數
-    const active = FAMILY.map((m) => {
-      const rv = allReviews.filter((v) => v.member === m.id).length;
-      const ws = wishes.filter((w) => w.member === m.id).length;
-      return { m, rv, ws, n: rv + ws };
-    }).filter((x) => x.n > 0).sort((a, b) => b.n - a.n || b.rv - a.rv);
-    const amax = active.reduce((m, x) => Math.max(m, x.n), 0);
-    const aranks = [];
-    active.forEach((x, i) => { aranks[i] = i > 0 && active[i - 1].n === x.n && active[i - 1].rv === x.rv ? aranks[i - 1] : i + 1; });
-    const activeHTML = !active.length ? `<p class="rk-empty">這段期間還沒有人評分或許願。</p>` : `<ol class="rk-list">${active.map((x, i) => {
-      const no = aranks[i];
-      return `<li class="rk-row${no <= 3 ? " rk-top rk-top" + no : ""}">
-        <span class="rk-no">${no}</span>
-        ${avatar(x.m, "rk-av")}
-        <span class="rk-main">
-          <span class="rk-name">${esc(x.m.name)}</span>
-          <span class="rk-bar" aria-hidden="true"><i style="width:${Math.max(4, Math.round((x.n / amax) * 100))}%;background:${BAR.active}"></i></span>
-          <span class="rk-split">評分 ${x.rv} 次・許願 ${x.ws} 次</span>
-        </span>
-        <span class="rk-val">${x.n}<small>次</small></span>
-      </li>`;
-    }).join("")}</ol>`;
+    // 家人排行：誰最常評分、誰最常許願
+    const personRank = (countOf, bar, unit, empty) => {
+      const rows = FAMILY.map((m) => ({ m, n: countOf(m.id) })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n);
+      if (!rows.length) return `<p class="rk-empty">${empty}</p>`;
+      const top = rows[0].n;
+      const ranks = [];
+      rows.forEach((x, i) => { ranks[i] = i > 0 && rows[i - 1].n === x.n ? ranks[i - 1] : i + 1; });
+      return `<ol class="rk-list">${rows.map((x, i) => `<li class="rk-row${ranks[i] === 1 ? " rk-first" : ""}">
+          <span class="rk-no">${ranks[i]}</span>
+          ${avatar(x.m, "rk-av")}
+          <span class="rk-main">
+            <span class="rk-name">${esc(x.m.name)}</span>
+            <span class="rk-bar" aria-hidden="true"><i style="width:${Math.max(4, Math.round((x.n / top) * 100))}%;background:${bar}"></i></span>
+          </span>
+          <span class="rk-val">${x.n}<small>${unit}</small></span>
+        </li>`).join("")}</ol>`;
+    };
+    const reviewerHTML = personRank((id) => allReviews.filter((v) => v.member === id).length, BAR.rating, "次", "這段期間還沒有人評分。");
+    const wisherHTML = personRank((id) => wishes.filter((w) => w.member === id).length, BAR.wished, "次", "這段期間還沒有人許願。");
     box.innerHTML = `
       <section class="rk-card">
         <h3>評分最高</h3>
@@ -1165,10 +1163,15 @@
         ${rankList(granted, (r) => `${r.n}<small>${Math.round((r.n / r.total) * 100)}%</small>`, max(granted), "這段期間還沒有答應的願望。",
           (a, b) => a.n === b.n && a.n * b.total === b.n * a.total, BAR.granted)}
       </section>
-      <section class="rk-card rk-wide">
-        <h3>誰最活躍</h3>
-        <p class="rk-sub">評分次數加上許願次數</p>
-        ${activeHTML}
+      <section class="rk-card">
+        <h3>誰最常評分</h3>
+        <p class="rk-sub">每個人留下的評分次數</p>
+        ${reviewerHTML}
+      </section>
+      <section class="rk-card">
+        <h3>誰最常許願</h3>
+        <p class="rk-sub">每個人許下的願望數</p>
+        ${wisherHTML}
       </section>`;
   }
 

@@ -190,10 +190,8 @@ dialog.login.redit-dlg { width: min(560px, calc(100% - 24px)); max-height: calc(
 .rk-list { list-style: none; margin: 0; padding: 0; }
 .rk-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
 .rk-row:first-child { border-top: 0; }
-.rk-no { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; font-size: 0.85rem; font-weight: 900; color: var(--muted); }
-.rk-top1 .rk-no { background: #f2c94c; color: #5a4300; }
-.rk-top2 .rk-no { background: #d5dbe3; color: #3b4452; }
-.rk-top3 .rk-no { background: #e7b98f; color: #5b3414; }
+.rk-no { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; font-size: 0.85rem; font-weight: 900; background: #e6e9ef; color: #4b5563; }
+.rk-first .rk-no { background: #f2c94c; color: #5a4300; }
 .rk-ic { flex: none; width: 34px; height: 34px; border-radius: 6px; display: grid; place-items: center; font-size: 1.1rem; }
 .rk-ic .lc { width: 20px; height: 20px; }
 .rk-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -202,9 +200,7 @@ button.rk-name { padding: 0; border: 0; background: none; cursor: pointer; color
 button.rk-name:hover { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
 .rk-bar { display: block; height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; }
 .rk-bar i { display: block; height: 100%; border-radius: 3px; }
-.rk-wide { grid-column: 1 / -1; }
 .rk-av { width: 34px; height: 34px; }
-.rk-split { font-size: 0.8rem; color: var(--muted); }
 .rk-who { display: flex; gap: 3px; }
 .rk-val { flex: none; min-width: 64px; text-align: right; font-weight: 900; font-size: 1.05rem; color: var(--ink); }
 .rk-val small { display: block; font-size: 0.75rem; font-weight: 400; color: var(--muted); }
