@@ -88,13 +88,16 @@ img { max-width: 100%; }
 .cal-legend .cal-wish { width: 16px; height: 16px; font-size: 0.6rem; }
 
 .cal-layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
-@media (min-width: 980px) { .cal-layout { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; } }
+/* 月曆頁比其他頁寬一點；右邊明細窄一點，讓格子放得下 7 個字的菜名 */
+.cal-view .wrap { max-width: 1480px; }
+@media (min-width: 1200px) { .cal-layout { grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: start; } }
+@media (min-width: 1360px) { .cal-layout { grid-template-columns: minmax(0, 1fr) 280px; } }
 .cal-dow, .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .cal-dow span { padding: 6px 0; text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
 .cal-grid { gap: 4px; }
 .cal-cell {
   position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 3px;
-  min-height: 104px; padding: 6px; text-align: left;
+  min-height: 104px; padding: 6px 5px; text-align: left;
   border: 1px solid var(--line); border-radius: 4px; background: var(--white); cursor: pointer; overflow: hidden;
 }
 .cal-cell.is-pad { border: 0; background: transparent; cursor: default; }
@@ -103,7 +106,7 @@ img { max-width: 100%; }
 .cal-num { font-size: 0.85rem; font-weight: 700; color: var(--ink); width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; }
 .cal-cell.is-today .cal-num { background: var(--navy); color: var(--white); }
 .cal-items { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.cal-item { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cal-item { display: flex; align-items: center; gap: 3px; font-size: 0.75rem; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .cal-item b { flex: none; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 3px; color: var(--white); font-size: 0.65rem; font-weight: 700; }
 .cal-dots { display: none; flex-wrap: wrap; gap: 3px; padding-left: 4px; }
 @media (max-width: 700px) {
@@ -115,11 +118,15 @@ img { max-width: 100%; }
   .cal-grid { gap: 3px; }
 }
 
-.cal-day { background: var(--soft); padding: 20px 20px 24px; }
-.cal-day-h { margin: 0 0 14px; font-size: 1.25rem; font-weight: 900; color: var(--navy); display: flex; align-items: center; gap: 10px; }
+.cal-day { background: var(--soft); padding: 16px 14px 18px; }
+.cal-day-h { margin: 0 0 12px; font-size: 1.1rem; font-weight: 900; color: var(--navy); display: flex; align-items: center; gap: 10px; }
 .cal-today-tag { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--navy); color: var(--white); }
-.cal-slots { display: grid; gap: 10px; }
-.cal-slot, .cal-wishes { background: var(--white); padding: 12px 14px; border-left: 4px solid var(--line); }
+.cal-slots { display: grid; }
+.cal-slot, .cal-wishes { background: var(--white); padding: 10px 12px; border-left: 4px solid var(--line); }
+.cal-slots { gap: 8px; }
+.cal-day .mini { height: 28px; padding: 0 8px; font-size: 0.78rem; }
+.cal-day .wd-ic { margin-right: 4px; }
+.cal-add { font-size: 0.9rem; }
 .cal-slot.slot-breakfast { border-left-color: var(--slot-b); }
 .cal-slot.slot-lunch { border-left-color: var(--slot-l); }
 .cal-slot.slot-dinner { border-left-color: var(--slot-d); }
@@ -130,7 +137,7 @@ img { max-width: 100%; }
 .cal-slot li, .cal-wishes li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
 .cal-wishes li { justify-content: flex-start; }
 .cal-slot li:first-child, .cal-wishes li:first-child { border-top: 0; }
-.cal-dish { font-weight: 700; overflow-wrap: anywhere; }
+.cal-dish { font-weight: 700; font-size: 0.95rem; overflow-wrap: anywhere; }
 button.cal-dish { padding: 0; border: 0; background: none; text-align: left; cursor: pointer; color: var(--navy); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .cal-wish-who { font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
 .cal-none { margin: 0; font-size: 0.9rem; color: var(--muted); }
