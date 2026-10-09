@@ -10,7 +10,7 @@
   const REVIEW_KEY = "family-recipes:reviews";
   const MEAL_KEY = "family-recipes:meals";
   const CUSTOM_KEY = "family-recipes:custom-recipes";
-  const SLOTS = [["breakfast", "早餐"], ["lunch", "午餐"], ["dinner", "晚餐"]];
+  const SLOTS = [["breakfast", "早餐"], ["lunch", "午餐"], ["dinner", "晚餐"], ["snack", "點心"]];
   const REVIEW_SHOW = 8; // 評分紀錄一開始顯示幾筆
   const WISH_TEXT_MAX = 30;
   const WISH_PER_DAY = 3; // 每個人同一天最多幾個願望（Firestore 規則也要一起改）
@@ -697,42 +697,120 @@
       toast(needsLogin() ? "先點最上面你的頭像登入，才能許願" : "先在最上面選你是誰，才能許願");
       return;
     }
-    const sel = $("#wish-dish");
-    state.wishTag = "";
-    renderWishTags();
-    fillWishOptions(recipeId || "");
-    $("#wish-text").value = "";
-    $("#wish-text").hidden = true;
+    wishPicker.reset(recipeId || "");
     setWhen("today");
     const d = $("#wish-date");
     d.min = ymd(new Date());
     d.value = addDays(0);
     $("#wish-err").textContent = "";
     $("#wish").showModal();
-    (recipeId ? $("#wish-go") : sel).focus();
+    if (recipeId) $("#wish-go").focus(); else wishPicker.focus();
   }
-  // 許願表單：用標籤縮小菜單
-  const OTHER = "__other";
-  function renderWishTags() {
-    const used = new Set(allRecipes().flatMap(tagsOf));
-    const tags = tagGroups().flatMap((g) => g.tags).filter((t) => used.has(t));
-    $("#wish-tags").innerHTML = ["", ...tags].map((t) =>
-      `<button type="button" class="wtag" data-wtag="${esc(t)}" aria-pressed="${t === state.wishTag}">${t ? esc(t) : "全部"}</button>`
-    ).join("") +
-      `<button type="button" class="wtag wtag-other" data-wtag="${OTHER}" aria-pressed="${state.wishTag === OTHER}">＋ 其他（自己寫）</button>`;
+  // ---------- 選菜工具（許願、排月曆共用） ----------
+  // 搜尋 + 分類藥丸（可多選，列出「全部條件都符合」的菜）+ 菜單清單 + 「自己寫」
+  const SEARCH_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>';
+  function makePicker(rootSel, textSel, otherLabel) {
+    const root = $(rootSel);
+    const st = { tags: new Set(), q: "", sel: "", other: false };
+    root.innerHTML = `
+      <label class="search pk-search"><span class="sr">搜尋菜名或食材</span>${SEARCH_SVG}
+        <input type="search" class="pk-q" placeholder="搜尋菜名或食材" autocomplete="off"></label>
+      <div class="pk-tags"></div>
+      <div class="pk-head"><span class="pk-count" aria-live="polite"></span></div>
+      <div class="pk-list" role="listbox" aria-label="符合的菜"></div>`;
+    const matchTags = (r, tags) => { const rt = tagsOf(r); for (const t of tags) if (!rt.includes(t)) return false; return true; };
+    const matchQ = (r) => {
+      const q = st.q.trim();
+      return !q || [r.title, r.subtitle, ...tagsOf(r), ...(r.ingredients || [])].join(" ").includes(q);
+    };
+    const list = () => allRecipes().filter((r) => matchTags(r, st.tags) && matchQ(r));
+    function renderTags() {
+      const used = new Set(allRecipes().flatMap(tagsOf));
+      const groups = tagGroups().map((g) => ({ name: g.name, tags: g.tags.filter((t) => used.has(t)) })).filter((g) => g.tags.length);
+      root.querySelector(".pk-tags").innerHTML = groups.map((g) => `
+        <div class="fgroup" role="group" aria-label="${esc(g.name)}">
+          <span class="fgroup-name">${esc(g.name)}</span>
+          <div class="fchips">${g.tags.map((t) => {
+            const on = st.tags.has(t);
+            // 數字：再加上這個標籤後還剩幾道
+            const n = on ? list().length : allRecipes().filter((r) => matchTags(r, new Set([...st.tags, t])) && matchQ(r)).length;
+            return `<button type="button" class="fchip pk-chip${!on && !n ? " is-zero" : ""}" data-ptag="${esc(t)}" aria-pressed="${on}">${esc(t)}<span class="fcount">${n}</span></button>`;
+          }).join("")}</div>
+        </div>`).join("") +
+        `<div class="pk-extra">
+          ${st.tags.size ? `<button type="button" class="fclear" data-pclear>清除分類</button>` : ""}
+          <button type="button" class="wtag wtag-other" data-pother aria-pressed="${st.other}">＋ ${otherLabel}</button>
+        </div>`;
+    }
+    function renderList() {
+      const rows = list();
+      if (st.sel && !rows.some((r) => r.id === st.sel)) st.sel = "";
+      root.querySelector(".pk-count").textContent = st.tags.size || st.q.trim() ? `符合的菜：${rows.length} 道` : `全部 ${rows.length} 道`;
+      root.querySelector(".pk-list").innerHTML = rows.length ? rows.map((r) => {
+        const on = r.id === st.sel;
+        return `<button type="button" class="pk-item${on ? " is-on" : ""}" role="option" aria-selected="${on}" data-pick="${esc(r.id)}">
+          <span class="rk-ic" style="color:${colorOf(r)};background:${tint(colorOf(r), 0.12)}" aria-hidden="true">${recipeGlyph(r)}</span>
+          <span class="pk-main"><span class="pk-title">${esc(r.title)}</span><span class="pk-tagline">${tagsOf(r).map(esc).join("・")}</span></span>
+          <span class="pk-check" aria-hidden="true">${on ? "✓" : ""}</span>
+        </button>`;
+      }).join("") : `<p class="pk-empty">沒有同時符合這些條件的菜，少選一個分類試試。</p>`;
+    }
+    function renderMode() {
+      root.querySelector(".pk-search").hidden = st.other;
+      root.querySelector(".pk-head").hidden = st.other;
+      root.querySelector(".pk-list").hidden = st.other;
+      root.querySelectorAll(".pk-tags .fgroup").forEach((g) => { g.hidden = st.other; });
+      const clr = root.querySelector("[data-pclear]");
+      if (clr) clr.hidden = st.other;
+      $(textSel).hidden = !st.other;
+    }
+    function render() { renderTags(); renderList(); renderMode(); }
+    root.addEventListener("click", (e) => {
+      const t = e.target.closest("[data-ptag]");
+      if (t) {
+        const v = t.dataset.ptag;
+        st.tags.has(v) ? st.tags.delete(v) : st.tags.add(v);
+        render();
+        const again = root.querySelector(`[data-ptag="${CSS.escape(v)}"]`);
+        if (again) again.focus();
+        return;
+      }
+      if (e.target.closest("[data-pclear]")) { st.tags.clear(); render(); root.querySelector(".pk-q").focus(); return; }
+      if (e.target.closest("[data-pother]")) {
+        st.other = !st.other;
+        render();
+        if (st.other) $(textSel).focus();
+        else { const b = root.querySelector("[data-pother]"); if (b) b.focus(); }
+        return;
+      }
+      const it = e.target.closest("[data-pick]");
+      if (it) {
+        st.sel = it.dataset.pick;
+        renderList();
+        const again = root.querySelector(`[data-pick="${CSS.escape(st.sel)}"]`);
+        if (again) again.focus();
+      }
+    });
+    root.querySelector(".pk-q").addEventListener("input", (e) => { st.q = e.target.value; renderTags(); renderList(); renderMode(); });
+    return {
+      reset(sel) {
+        st.tags.clear(); st.q = ""; st.other = false; st.sel = sel || "";
+        root.querySelector(".pk-q").value = "";
+        $(textSel).value = "";
+        render();
+        if (st.sel) {
+          const it = root.querySelector(`[data-pick="${CSS.escape(st.sel)}"]`);
+          if (it) it.scrollIntoView({ block: "nearest" });
+        }
+      },
+      refresh: render,
+      get other() { return st.other; },
+      get selected() { return st.other ? null : findRecipe(st.sel); },
+      focus() { (root.querySelector(".pk-item.is-on") || root.querySelector(".pk-q")).focus(); },
+    };
   }
-  function fillWishOptions(keep) {
-    const sel = $("#wish-dish");
-    const other = state.wishTag === OTHER;
-    // 選「其他」時藏起菜單，改成自己輸入
-    sel.hidden = other;
-    $("#wish-text").hidden = !other;
-    if (other) return;
-    const list = allRecipes().filter((r) => !state.wishTag || tagsOf(r).includes(state.wishTag));
-    sel.innerHTML = `<option value="">選一道菜…（${list.length} 道）</option>` +
-      list.map((r) => `<option value="${esc(r.id)}">${esc(r.title)}</option>`).join("");
-    sel.value = list.some((r) => r.id === keep) ? keep : "";
-  }
+  let wishPicker = null;
+  let mealPicker = null;
 
   function setWhen(v) {
     state.when = v;
@@ -867,42 +945,21 @@
   }
 
   // ---------- 新增料理（爸媽） ----------
-  const MEAL_OTHER = "__other";
   function openMeal(slot) {
     if (!isParentNow()) return;
     state.mealSlot = slot;
-    state.mealTag = "";
     const label = (SLOTS.find((x) => x[0] === slot) || [])[1] || "";
     const [, m, d] = state.calSel.split("-").map(Number);
     $("#meal-title").textContent = `${m}/${d} ${label}要煮什麼？`;
     $("#meal-text").value = "";
     $("#meal-err").textContent = "";
     $("#meal-newrecipe").hidden = !isEditorNow();
-    renderMealTags();
-    fillMealOptions("");
+    mealPicker.reset("");
     const dlg = $("#meal");
     if (!dlg.open) dlg.showModal();
-    $("#meal-dish").focus();
+    dlg.scrollTop = 0;
+    mealPicker.focus();
   }
-  function renderMealTags() {
-    const used = new Set(allRecipes().flatMap(tagsOf));
-    const tags = tagGroups().flatMap((g) => g.tags).filter((t) => used.has(t));
-    $("#meal-tags").innerHTML = ["", ...tags].map((t) =>
-      `<button type="button" class="wtag" data-mtag="${esc(t)}" aria-pressed="${t === state.mealTag}">${t ? esc(t) : "全部"}</button>`
-    ).join("") + `<button type="button" class="wtag wtag-other" data-mtag="${MEAL_OTHER}" aria-pressed="${state.mealTag === MEAL_OTHER}">＋ 只寫菜名</button>`;
-  }
-  function fillMealOptions(keep) {
-    const sel = $("#meal-dish");
-    const other = state.mealTag === MEAL_OTHER;
-    sel.hidden = other;
-    $("#meal-text").hidden = !other;
-    if (other) return;
-    const list = allRecipes().filter((r) => !state.mealTag || tagsOf(r).includes(state.mealTag));
-    sel.innerHTML = `<option value="">選一道菜…（${list.length} 道）</option>` +
-      list.map((r) => `<option value="${esc(r.id)}">${esc(r.title)}</option>`).join("");
-    sel.value = list.some((r) => r.id === keep) ? keep : "";
-  }
-
   // ---------- 新增／編輯食譜（只有 editor） ----------
   function openRecipeEditor(id, returnToMeal) {
     if (!isEditorNow()) return;
@@ -1181,19 +1238,12 @@
     });
     on("#login-cancel", "click", () => login.close());
 
+    // ---- 選菜工具 ----
+    wishPicker = makePicker("#wish-picker", "#wish-text", "其他（自己寫）");
+    mealPicker = makePicker("#meal-picker", "#meal-text", "只寫菜名");
+
     // ---- 許願 ----
     on("#make-wish", "click", () => openWish(""));
-    on("#wish-tags", "click", (e) => {
-      const b = e.target.closest("[data-wtag]");
-      if (!b) return;
-      state.wishTag = b.dataset.wtag;
-      renderWishTags();
-      fillWishOptions($("#wish-dish").value);
-      $("#wish-err").textContent = "";
-      if (state.wishTag === OTHER) { $("#wish-text").focus(); return; }
-      const again = $(`#wish-tags [data-wtag="${CSS.escape(state.wishTag)}"]`);
-      if (again) again.focus();
-    });
     on("#wish-when", "click", (e) => {
       const b = e.target.closest("[data-when]");
       if (!b) return;
@@ -1204,11 +1254,11 @@
     on("#wish-form", "submit", async (e) => {
       e.preventDefault();
       const err = $("#wish-err");
-      const other = state.wishTag === OTHER;
-      const r = other ? null : allRecipes().find((x) => x.id === $("#wish-dish").value);
+      const other = wishPicker.other;
+      const r = wishPicker.selected;
       const text = other ? $("#wish-text").value.trim().slice(0, WISH_TEXT_MAX) : (r ? r.title : "");
       if (other && !text) { err.textContent = "寫下想吃的菜名。"; $("#wish-text").focus(); return; }
-      if (!other && !r) { err.textContent = "選一道想吃的菜，或點「其他」自己寫。"; $("#wish-dish").focus(); return; }
+      if (!other && !r) { err.textContent = "從清單點一道想吃的菜，或點「其他」自己寫。"; wishPicker.focus(); return; }
       const date = state.when === "today" ? addDays(0)
         : state.when === "tomorrow" ? addDays(1)
         : $("#wish-date").value;
@@ -1309,27 +1359,16 @@
     });
 
     // ---- 新增料理 ----
-    on("#meal-tags", "click", (e) => {
-      const b = e.target.closest("[data-mtag]");
-      if (!b) return;
-      state.mealTag = b.dataset.mtag;
-      renderMealTags();
-      fillMealOptions($("#meal-dish").value);
-      $("#meal-err").textContent = "";
-      if (state.mealTag === MEAL_OTHER) { $("#meal-text").focus(); return; }
-      const again = $(`#meal-tags [data-mtag="${CSS.escape(state.mealTag)}"]`);
-      if (again) again.focus();
-    });
     on("#meal-cancel", "click", () => $("#meal").close());
     on("#meal-newrecipe", "click", () => openRecipeEditor(null, true));
     on("#meal-form", "submit", async (e) => {
       e.preventDefault();
       const err = $("#meal-err");
-      const other = state.mealTag === MEAL_OTHER;
-      const r = other ? null : findRecipe($("#meal-dish").value);
+      const other = mealPicker.other;
+      const r = mealPicker.selected;
       const text = other ? $("#meal-text").value.trim().slice(0, 40) : (r ? r.title : "");
       if (other && !text) { err.textContent = "寫下菜名。"; $("#meal-text").focus(); return; }
-      if (!other && !r) { err.textContent = "選一道菜，或點「只寫菜名」。"; $("#meal-dish").focus(); return; }
+      if (!other && !r) { err.textContent = "從清單點一道菜，或點「只寫菜名」。"; mealPicker.focus(); return; }
       const btn = $("#meal-go");
       btn.disabled = true;
       try {
@@ -1447,7 +1486,7 @@
         toast(state.reEditId ? "食譜已更新" : `新增了「${title}」`);
         if (state.reReturn) {
           openMeal(state.mealSlot);
-          fillMealOptions(id);
+          mealPicker.reset(id);
         } else if (!state.reEditId) {
           openRecipe(id);
         }

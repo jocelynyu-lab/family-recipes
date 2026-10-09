@@ -86,6 +86,7 @@
         <li><i class="dot slot-breakfast"></i>早餐</li>
         <li><i class="dot slot-lunch"></i>午餐</li>
         <li><i class="dot slot-dinner"></i>晚餐</li>
+        <li><i class="dot slot-snack"></i>點心</li>
         <li><span class="cal-wish" aria-hidden="true">願</span>有答應的願望</li>
       </ul>
       <div class="cal-layout">
@@ -131,9 +132,8 @@
   <dialog id="wish" class="login wish-dlg" aria-labelledby="wish-title">
     <form id="wish-form" class="wish-in" novalidate>
       <h2 class="login-title" id="wish-title">許個願</h2>
-      <label class="f-label" for="wish-dish">想吃什麼？</label>
-      <div class="wtags" id="wish-tags" role="group" aria-label="先選分類，縮小菜單"></div>
-      <select id="wish-dish" class="f-input"></select>
+      <span class="f-label">想吃什麼？</span>
+      <div class="picker" id="wish-picker"></div>
       <label class="sr" for="wish-text">自己寫想吃的菜</label>
       <input id="wish-text" class="f-input" type="text" maxlength="30" placeholder="寫下想吃的菜，例如：咖哩飯" hidden>
       <fieldset class="f-set">
@@ -156,9 +156,7 @@
   <dialog id="meal" class="login wish-dlg" aria-labelledby="meal-title">
     <form id="meal-form" class="wish-in" novalidate>
       <h2 class="login-title" id="meal-title">要煮什麼？</h2>
-      <div class="wtags" id="meal-tags" role="group" aria-label="先選分類，縮小菜單"></div>
-      <label class="sr" for="meal-dish">選一道菜</label>
-      <select id="meal-dish" class="f-input"></select>
+      <div class="picker" id="meal-picker"></div>
       <label class="sr" for="meal-text">自己寫菜名</label>
       <input id="meal-text" class="f-input" type="text" maxlength="40" placeholder="寫下菜名，例如：外帶便當" hidden>
       <button type="button" class="fclear meal-new" id="meal-newrecipe">＋ 菜單裡沒有？建立新食譜</button>
