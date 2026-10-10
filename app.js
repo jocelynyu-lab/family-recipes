@@ -3,7 +3,7 @@
 
   const MEMBER_KEY = "family-recipes:member";
   const RATING_KEY = "family-recipes:ratings";
-  const LEVELS = { 1: "簡單", 2: "要一點耐心", 3: "請大人一起做" };
+  const LEVELS = { 1: "Easy", 2: "Medium", 3: "Hard" };
   const ALL = "全部";
   const NOTE_MAX = 200;
   const WISH_KEY = "family-recipes:wishes";
@@ -11,7 +11,7 @@
   const MEAL_KEY = "family-recipes:meals";
   const CUSTOM_KEY = "family-recipes:custom-recipes";
   const SLOTS = [["breakfast", "早餐"], ["lunch", "午餐"], ["dinner", "晚餐"], ["snack", "點心"]];
-  const REVIEW_SHOW = 8; // 評分紀錄一開始顯示幾筆
+  const REVIEW_SHOW = 5; // 評分紀錄一開始顯示幾筆
   const WISH_TEXT_MAX = 30;
   const WISH_PER_DAY = 3; // 每個人同一天最多幾個願望（Firestore 規則也要一起改）
 
@@ -671,7 +671,7 @@
             // 右側狀態：爸媽看到可以按的「答應／已答應」，其他人看到綠色標籤
             const status = isParent
               ? (w.granted
-                ? `<button type="button" class="mini mini-ok" data-grant="${esc(w.id)}" aria-pressed="true" title="再按一次可以取消答應">✓ 已答應</button>`
+                ? `<button type="button" class="mini mini-ok" data-grant="${esc(w.id)}" aria-pressed="true" title="再按一次可以取消答應">已答應</button>`
                 : `<button type="button" class="mini mini-solid" data-grant="${esc(w.id)}" aria-pressed="false">答應</button>`)
               : (w.granted ? `<span class="mini mini-ok is-tag">✓ 爸媽答應了</span>` : "");
             return `<li class="wish${w.granted ? " granted" : ""}">
