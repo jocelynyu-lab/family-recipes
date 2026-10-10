@@ -1153,23 +1153,23 @@
         ${rankList(served, (r) => `${r.n}<small>次</small>`, max(served), "這段期間月曆上還沒有排菜。", (a, b) => a.n === b.n, BAR.served)}
       </section>
       <section class="rk-card">
-        <h3>最多人許願</h3>
+        <h3>許願最多</h3>
         <p class="rk-sub">被許願的次數，旁邊是許過願的人</p>
         ${rankList(wished, (r) => `${r.n}<small>次</small>`, max(wished), "這段期間還沒有人許願。", (a, b) => a.n === b.n, BAR.wished)}
       </section>
       <section class="rk-card">
-        <h3>爸媽答應最多</h3>
+        <h3>答應最多</h3>
         <p class="rk-sub">答應的次數和答應率</p>
         ${rankList(granted, (r) => `${r.n}<small>${Math.round((r.n / r.total) * 100)}%</small>`, max(granted), "這段期間還沒有答應的願望。",
           (a, b) => a.n === b.n && a.n * b.total === b.n * a.total, BAR.granted)}
       </section>
       <section class="rk-card">
-        <h3>誰最常評分</h3>
+        <h3>評分排行</h3>
         <p class="rk-sub">每個人留下的評分次數</p>
         ${reviewerHTML}
       </section>
       <section class="rk-card">
-        <h3>誰最常許願</h3>
+        <h3>許願排行</h3>
         <p class="rk-sub">每個人許下的願望數</p>
         ${wisherHTML}
       </section>`;
