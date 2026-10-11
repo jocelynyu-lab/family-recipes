@@ -3,11 +3,11 @@
 // 家人名單：parent: true 可以答應願望、排月曆；editor: true 可以新增、編輯、匯入食譜
 // icon 是 Lucide 圖示名稱（清單在 icons.js），color 是頭像顏色
 const FAMILY = [
-  { id: "Dad",   email: "archie@ourfamily.home",  parent: true, name: "Dad",   icon: "face-slightly-smiling", color: "#0066CC" },
-  { id: "Mom",   email: "jocelyn@ourfamily.home", parent: true, editor: true, name: "Mom",   icon: "squirrel", color: "#d0465c" },
-  { id: "Ethan", email: "ethan@ourfamily.home",   name: "Ethan", icon: "face-grinning", color: "#AE8F00" },
-  { id: "Rosie", email: "rosie@ourfamily.home",   name: "Rosie", icon: "cat", color: "#6A6AFF" },
-  { id: "Heng",  email: "heng@ourfamily.home",    name: "Heng",  icon: "plane", color: "#0080FF" },
+  { id: "Dad",   email: "archie@ourfamily.home",  parent: true, name: "Dad",   icon: "rabbit", color: "#3c78d8" },
+  { id: "Mom",   email: "jocelyn@ourfamily.home", parent: true, editor: true, name: "Mom",   icon: "rabbit", color: "#e06666" },
+  { id: "Ethan", email: "ethan@ourfamily.home",   name: "Ethan", icon: "face-grinning", color: "#f1c232" },
+  { id: "Rosie", email: "rosie@ourfamily.home",   name: "Rosie", icon: "cat", color: "#8e7cc3" },
+  { id: "Heng",  email: "heng@ourfamily.home",    name: "Heng",  icon: "plane", color: "#6aa84f" },
 ];
 
 // ===== 分類標籤 =====
